@@ -1,0 +1,55 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>student</title>
+   <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+        
+        <div class="container">
+
+<h2>Student Dashboard</h2>
+
+<input id="search" placeholder="Enter Complaint ID">
+<button onclick="searchComplaint()">Check Status</button>
+
+<hr>
+
+<button onclick="location='complaint.html'">Register New Complaint</button>
+
+</div>
+<script>
+function searchComplaint(){
+
+    let cid = document.getElementById("search").value;
+
+    if(cid === ""){
+        alert("Please enter Complaint ID");
+        return;
+    }
+
+    fetch(`http://127.0.0.1:8000/search_complaint/${cid}/`)
+    .then(response => response.json())
+    .then(data => {
+
+        if(data.found){
+            alert("Complaint Status: " + data.status);
+        }else{
+            alert("Complaint Not Found");
+        }
+
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Server Error");
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+    
+<div class="container">
+
+<h2>Campus Grievance System</h2>
+
+<div class="stats">
+<p>Total: <span id="total" style="background-color: blue;">x</span></p>
+<p>pending: <span id="pending" style="background-color: yellow;">0</span></p>
+<p>Solved: <span id="solved" style="background-color: green;">y</span></p>
+<p>In Progress: <span id="progress" style="background-color:red;">z</span></p>
+</div>
+
+<button onclick="location='login.html'">Login</button>
+<button onclick="location='signin.html'">Sign Up</button>
+
+</div>
+
+<!--<script>loadStats()</script>--->
+<script>
+function loadStats() {
+    
+
+fetch("http://127.0.0.1:8000/complaint_stats/")
+.then(r=>r.json())
+.then(d=>{
+ document.getElementById("total").innerText = d.total;
+ document.getElementById("solved").innerText = d.solved;
+ document.getElementById("progress").innerText = d.progress;
+    document.getElementById("pending").innerText = d.pending;
+});}
+
+window.onload=loadStats;
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>staff</title>
+   <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+       
+        <div class="container">
+
+<h2>Staff Dashboard</h2>
+
+<div id="staffBox"></div>
+
+</div>
+<script>
+  let empId = sessionStorage.getItem("emp_id");
+
+if(!empId){
+    alert("Please login first");
+    window.location = "login.html";
+}
+fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
+.then(r=>r.json())
+.then(data=>{
+ let box = document.getElementById("staffBox");
+
+ data.forEach(c=>{
+   box.innerHTML += `
+   <div class="block">
+     <h3>${c.title}</h3>
+     <p>Status: ${c.status}</p>
+     <button onclick="update(${c.id},'In Progress')">mark In Progress</button>
+     <button onclick="update(${c.id},'Solved')">Solved</button>
+   </div>`;
+ });
+});
+
+function update(id,status){
+fetch("http://127.0.0.1:8000/update_status/",{
+ method:"POST",
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({id:id,status:status})
+})
+.then(()=>location.reload());
+}
+</script>
+
+</body>
+</html>

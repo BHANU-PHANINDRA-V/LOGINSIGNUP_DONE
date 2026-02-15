@@ -1,0 +1,65 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>register_complaint</title>
+    <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+        
+        <div class="container">
+
+<h2>Register Complaint</h2>
+
+<input id="title" placeholder="Title">
+<textarea id="desc" placeholder="Description"></textarea>
+
+<select id="category">
+<option>Electrical</option>
+<option>Water</option>
+<option>Furniture</option>
+<option>Civil</option>
+<option>Network</option>
+<option>Sanitation</option>
+</select>
+
+<input type="file" id="photo">
+
+<button onclick="addComplaint()">Submit</button>
+
+</div>
+<script>
+    function addComplaint(){
+      fetch("http://127.0.0.1:8000/register_complaint/",{
+ method:"POST",
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({
+   roll: sessionStorage.getItem("roll"),
+   title: document.getElementById("title").value,
+   description: document.getElementById("desc").value,
+   category: document.getElementById("category").value
+ })
+})
+.then(r=>r.json())
+.then(d=>{
+ if(d.success){
+   sessionStorage.setItem("complaint_id", d.complaint_id);
+   //location="complaint_success.html"; just for now ,because idk how to use templates folder
+  document.querySelector(".container").innerHTML = `
+    <h2>Complaint Registered Successfully ✅</h2>
+    <p>Your Complaint ID is:</p>
+    <h1>${d.complaint_id}</h1>
+    <button onclick="location='student.html'">Go to Dashboard</button>
+`;
+
+  }
+});
+}
+    
+</script>
+</body>
+</html>

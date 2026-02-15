@@ -1,0 +1,189 @@
+<!----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signin</title>
+    <link rel="stylesheet" href="index.css">
+
+</head>
+<body>
+        
+        <div class="container">
+
+<h2>Student Registration</h2>
+
+<input id="name" placeholder="Full Name">
+<input id="username" placeholder="Student Username">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="signup()">Create Account</button>
+
+<p>Already registered?
+<a href="login.html">Login</a>
+</p>
+
+</div>
+<script>
+function signup(){
+
+fetch("http://127.0.0.1:8000/signup/",{
+ method:"POST",
+ headers:{'Content-Type':'application/json'},
+ body:JSON.stringify({
+  roll: document.getElementById("username").value,
+  name: document.getElementById("name").value,
+  mail: document.getElementById("username").value + "@nitap.ac.in",
+  pswd: document.getElementById("password").value
+ })
+})
+.then(r=>r.json())
+.then(()=>{
+ alert("Registered Successfully");
+ location="login.html";
+});
+}
+</script>
+
+
+</body>
+</html>
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registration</title>
+<link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<h2 id="formTitle">Student Registration</h2>
+
+<!-- Role Selection -->
+<select id="role" onchange="changeRole()">
+    <option value="student">Student</option>
+    <option value="staff">Staff</option>
+</select>
+
+<!-- Common Fields -->
+<input id="name" placeholder="Full Name">
+<input id="mail" placeholder="Email">
+<input id="mobile" placeholder="Mobile Number">
+<input id="password" type="password" placeholder="Password">
+
+<!-- Student Only Field -->
+<input id="roll" placeholder="Roll Number">
+
+<!-- Staff Only Field -->
+<select id="category" style="display:none;">
+    <option value="CSE">CSE</option>
+    <option value="Electrical">Electrical</option>
+    <option value="Mechanical">Mechanical</option>
+</select>
+
+<button onclick="registerUser()">Create Account</button>
+
+<p>Already registered?
+<a href="login.html">Login</a>
+</p>
+
+</div>
+
+<script>
+
+function changeRole(){
+    let role = document.getElementById("role").value;
+
+    if(role === "staff"){
+        document.getElementById("formTitle").innerText = "Staff Registration";
+        document.getElementById("roll").style.display = "none";
+        document.getElementById("category").style.display = "block";
+    } else {
+        document.getElementById("formTitle").innerText = "Student Registration";
+        document.getElementById("roll").style.display = "block";
+        document.getElementById("category").style.display = "none";
+    }
+}
+
+function registerUser(){
+
+let role = document.getElementById("role").value;
+let name = document.getElementById("name").value;
+let mail = document.getElementById("mail").value;
+let mobile = document.getElementById("mobile").value;
+let password = document.getElementById("password").value;
+
+if(role === "student"){
+
+    fetch("http://127.0.0.1:8000/signup/",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            roll: document.getElementById("roll").value,
+            name: name,
+            mail: mail,
+            pswd: password,
+            mobile: mobile
+        })
+    })
+    .then(res => res.json())
+    .then(data=>{
+        if(data.success){
+            alert("Student Registered Successfully");
+            window.location="login.html";
+        } else {
+            alert("Registration Failed");
+        }
+    });
+
+}else{
+
+    fetch("http://127.0.0.1:8000/staff_signup/",{
+        method:"POST",
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+            name: name,
+            mail: mail,
+            pswd: password,
+            mobile: mobile,
+            category: document.getElementById("category").value
+        })
+    })
+    .then(res => {
+    if(!res.ok){
+        throw new Error("Server Error: " + res.status);
+    }
+    return res.json();
+})
+    //.then(res => res.json())
+    .then(data=>{
+        console.log("Response:",data);
+        if(data.success){
+            alert("Staff Registered Successfully.\nYour Employee ID is: " + data.emp_id);
+            window.location="login.html";
+        } else {
+            alert("Registration Failed");
+        }
+    })
+    .catch(error => {
+        console.error("Error during registration:", error);
+        alert("An error occurred during registration. Please try again.");
+    });
+
+}
+
+}
+
+</script>
+
+</body>
+</html>
+
+
+
