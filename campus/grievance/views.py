@@ -97,6 +97,22 @@ def search_complaint(request, cid):
         return JsonResponse({"found": False})
 #staff view api
 @csrf_exempt
+@csrf_exempt
+def student_complaints(request, roll, status):
+    student = Student.objects.get(roll=roll)
+    complaints = Complaint.objects.filter(student=student, status=status)
+
+    data = []
+    for c in complaints:
+        data.append({
+            "id": c.id,
+            "title": c.title,
+            "status": c.status
+        })
+
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
 def staff_complaints(request, emp_id):
     from .models import Staff
 

@@ -11,5 +11,6 @@ urlpatterns = [
      path("complaint_stats/", views.complaint_stats),
       path("staff_signup/", views.staff_signup),
       path("staff_login/", views.staff_login),
+       path("student_complaints/<int:roll>/<str:status>/", views.student_complaints)
 ]
 #path 1st argument is api endpoint, 2nd argument is the view function that will handle the request to that endpoint

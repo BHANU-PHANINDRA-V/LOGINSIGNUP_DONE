@@ -23,6 +23,23 @@
 <button onclick="location='complaint.html'">Register New Complaint</button>
 
 </div>
+<div class="my_complaints">
+    <div class="box solved">
+       
+        <button onclick="viewComplaints('Solved')">Solved</button>
+    </div>
+    <div class="box inprogress">
+        
+        <button onclick="viewComplaints('In Progress')">In Progress</button>
+    </div>
+    <div class="box pending">
+       
+        <button onclick="viewComplaints('Pending')">Pending</button>
+    </div>
+</div>
+<div id="staffBox">
+    complaints are to be displayed here.
+</div>
 <script>
 function searchComplaint(){
 
@@ -47,6 +64,29 @@ function searchComplaint(){
     .catch(error => {
         console.error("Error:", error);
         alert("Server Error");
+    });
+}
+function viewComplaints(status){
+    let box = document.getElementById("staffBox");
+    if(status === "Solved"){
+        box.innerHTML = "<h3>Solved Complaints</h3>";
+    } else if(status === "In Progress"){
+        box.innerHTML = "<h3>In Progress Complaints</h3>";
+    } else {
+        box.innerHTML = "<h3>Pending Complaints</h3>";
+    }
+    let sid = sessionStorage.getItem("roll");
+    fetch(`http://127.0.0.1:8000/student_complaints/${sid}/${status}/`)
+    .then(response => response.json())
+    .then(data => {
+        data.forEach(c => {
+            box.innerHTML += `
+            <div class="block">
+                 <h3> ID:   ${c.id}</h3>
+                <h3>TITLE: ${c.title}</h3>
+                <p>Status: ${c.status}</p>
+            </div>`;
+        });
     });
 }
 </script>
