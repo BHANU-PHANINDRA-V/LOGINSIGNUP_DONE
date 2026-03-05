@@ -50,8 +50,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
- 'django.middleware.security.SecurityMiddleware',
 ]
 
 ROOT_URLCONF = 'campus.urls'
@@ -59,7 +57,7 @@ ROOT_URLCONF = 'campus.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
          'OPTIONS': {
             'context_processors': [
@@ -143,5 +141,7 @@ STATIC_URL = 'static/'
 #]
 #-----------------------
 CORS_ALLOW_ALL_ORIGINS = True
-
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
 
