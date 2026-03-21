@@ -1,10 +1,11 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>staff</title>
-    <link rel="stylesheet" href="index.css" />
+    <link rel="stylesheet" href="{% static 'index.css' %}" />
   </head>
   <body>
     <div class="container">
@@ -29,7 +30,7 @@
 
       if (!empId) {
         alert("Please login first");
-        window.location = "login.html";
+        window.location = "{% url 'login_page' %}";
       }
       /*
 fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
@@ -58,7 +59,10 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
           box.innerHTML = "<h3>Pending Complaints</h3>";
         }
         let sid = sessionStorage.getItem("roll");
-        fetch(`http://127.0.0.1:8000/student_complaints/${sid}/${status}/`)
+        const complaintsUrl = "{% url 'student_complaints' 0 'status-placeholder' %}"
+          .replace("/0/", `/${sid}/`)
+          .replace("status-placeholder", encodeURIComponent(status));
+        fetch(complaintsUrl)
           .then((response) => response.json())
           .then((data) => {
             if (status === "Solved") {
@@ -96,7 +100,7 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
           });
       }
       function update(id, status) {
-        fetch("http://127.0.0.1:8000/update_status/", {
+        fetch("{% url 'update_status' %}", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: id, status: status }),
@@ -110,7 +114,8 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
           return;
         }
 
-        fetch(`http://127.0.0.1:8000/search_complaint/${cid}/`)
+        const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
+        fetch(searchUrl)
           .then((response) => response.json())
           .then((data) => {
             if (data.found) {

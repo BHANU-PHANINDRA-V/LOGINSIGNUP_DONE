@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from django.http import JsonResponse
 from .models import Staff, Student
 from django.views.decorators.csrf import csrf_exempt
@@ -166,3 +167,22 @@ def complaint_stats(request):
         "progress": progress,
         "solved": solved
     })
+# --- HTML PAGE VIEWS ---
+
+def index_page(request):
+    return render(request, 'index.html')
+
+def login_page(request):
+    return render(request, 'login.html')
+
+def signin_page(request):
+    return render(request, 'signin.html')
+
+def student_page(request):
+    return render(request, 'student.html')
+
+def staff_page(request):
+    return render(request, 'staff.html')
+
+def complaint_page(request):
+    return render(request, 'complaint.html')

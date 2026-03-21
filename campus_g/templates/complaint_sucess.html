@@ -1,9 +1,9 @@
 
-
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-<link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="{% static 'index.css' %}">
 
 </head>
 <body>
@@ -14,7 +14,7 @@
 <p>Your Complaint ID is:</p>
 <h1 id="cid"></h1>
 
-<button onclick="location='student.html'">Go to Dashboard</button>
+<button onclick="window.location='{% url 'student_page' %}'">Go to Dashboard</button>
 </div>
 
 <script>

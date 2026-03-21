@@ -50,13 +50,14 @@ fetch("http://127.0.0.1:8000/signup/",{
 </body>
 </html>
 -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registration</title>
-<link rel="stylesheet" href="index.css">
+<link rel="stylesheet" href="{% static 'index.css' %}">
 </head>
 
 <body>
@@ -92,7 +93,7 @@ fetch("http://127.0.0.1:8000/signup/",{
 <button onclick="registerUser()">Create Account</button>
 
 <p>Already registered?
-<a href="login.html">Login</a>
+<a href="{% url 'login_page' %}">Login</a>
 </p>
 
 </div>
@@ -123,7 +124,7 @@ let password = document.getElementById("password").value;
 
 if(role === "student"){
 
-    fetch("http://127.0.0.1:8000/signup/",{
+    fetch("{% url 'signup' %}",{
         method:"POST",
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -138,7 +139,7 @@ if(role === "student"){
     .then(data=>{
         if(data.success){
             alert("Student Registered Successfully");
-            window.location="login.html";
+            window.location = "{% url 'login_page' %}";
         } else {
             alert("Registration Failed");
         }
@@ -146,7 +147,7 @@ if(role === "student"){
 
 }else{
 
-    fetch("http://127.0.0.1:8000/staff_signup/",{
+    fetch("{% url 'staff_signup' %}",{
         method:"POST",
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
@@ -168,7 +169,7 @@ if(role === "student"){
         console.log("Response:",data);
         if(data.success){
             alert("Staff Registered Successfully.\nYour Employee ID is: " + data.emp_id);
-            window.location="login.html";
+            window.location="{% url 'login_page' %}";
         } else {
             alert("Registration Failed");
         }
