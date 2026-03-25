@@ -1,49 +1,40 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>student</title>
+    <title>Student Dashboard</title>
    <link rel="stylesheet" href="{% static 'index.css' %}">
-
 </head>
 <body>
         
-        <div class="container">
-
-<h2>Student Dashboard</h2>
-
-<input id="search" placeholder="Enter Complaint ID">
-<button onclick="searchComplaint()">Check Status</button>
-
-<hr>
-
-<button onclick="location='{% url "complaint_page" %}'">Register New Complaint</button>
-
+<div class="container">
+    <h2>Student Dashboard</h2>
+    <input id="search" placeholder="Enter Complaint ID">
+    <button onclick="searchComplaint()">Check Status</button>
+    <hr>
+    <button onclick="location='{% url 'complaint_page' %}'">Register New Complaint</button>
 </div>
+
 <div class="my_complaints">
     <div class="box solved">
-       
         <button onclick="viewComplaints('Solved')">Solved</button>
     </div>
     <div class="box inprogress">
-        
         <button onclick="viewComplaints('In Progress')">In Progress</button>
     </div>
     <div class="box pending">
-       
         <button onclick="viewComplaints('Pending')">Pending</button>
     </div>
 </div>
+
 <div id="staffBox">
     complaints are to be displayed here.
 </div>
-<!----
+
 <script>
 function searchComplaint(){
-
     let cid = document.getElementById("search").value;
 
     if(cid === ""){
@@ -51,60 +42,8 @@ function searchComplaint(){
         return;
     }
 
-    fetch(`{% url 'search_complaint' cid %}`)
-    .then(response => response.json())
-    .then(data => {
-
-        if(data.found){
-            alert("Complaint Status: " + data.status);
-        }else{
-            alert("Complaint Not Found");
-        }
-
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Server Error");
-    });
-}
-function viewComplaints(status){
-    let box = document.getElementById("staffBox");
-    if(status === "Solved"){
-        box.innerHTML = "<h3>Solved Complaints</h3>";
-    } else if(status === "In Progress"){
-        box.innerHTML = "<h3>In Progress Complaints</h3>";
-    } else {
-        box.innerHTML = "<h3>Pending Complaints</h3>";
-    }
-    let sid = sessionStorage.getItem("roll");
-    fetch(`{% url 'student_complaints' sid status %}`)
-    .then(response => response.json())
-    .then(data => {
-        data.forEach(c => {
-            box.innerHTML += `
-            <div class="block">
-                 <h3> ID:   ${c.id}</h3>
-                <h3>TITLE: ${c.title}</h3>
-                <p>Status: ${c.status}</p>
-            </div>`;
-        });
-    });
-}
-</script> 
--->
-<script>
-function searchComplaint(){
-
-    let cid = document.getElementById("search").value;
-
-    if(cid === ""){
-        alert("Please enter Complaint ID");
-        return;
-    }
-
-    // FIX: Manually build the URL since 'cid' is a JS variable
-    const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
-    fetch(searchUrl)
+    // SAFE FETCH: No Django tags here, just pure JavaScript template literals
+    fetch(`/search_complaint/${cid}/`)
     .then(response => {
         if(!response.ok) throw new Error("Server Error");
         return response.json();
@@ -134,11 +73,8 @@ function viewComplaints(status){
     
     let sid = sessionStorage.getItem("roll");
     
-    // FIX: Manually build the URL since 'sid' and 'status' are JS variables
-    const complaintsUrl = "{% url 'student_complaints' 0 'status-placeholder' %}"
-        .replace("/0/", `/${sid}/`)
-        .replace("status-placeholder", encodeURIComponent(status));
-    fetch(complaintsUrl)
+    // SAFE FETCH: No Django tags here either!
+    fetch(`/student_complaints/${sid}/${status}/`)
     .then(response => {
         if(!response.ok) throw new Error("Server Error");
         return response.json();
@@ -164,5 +100,6 @@ function viewComplaints(status){
     });
 }
 </script>
+
 </body>
 </html>

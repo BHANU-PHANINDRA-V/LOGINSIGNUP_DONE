@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>staff</title>
+    <title>Staff Dashboard</title>
     <link rel="stylesheet" href="{% static 'index.css' %}" />
   </head>
   <body>
@@ -12,6 +12,7 @@
       <h2>Staff Dashboard</h2>
       <input id="search" placeholder="Enter Complaint ID" />
       <button onclick="searchComplaint()">Check Status</button>
+      
       <div class="my_complaints">
         <div class="box solved">
           <button onclick="viewComplaints('Solved')">Solved</button>
@@ -25,32 +26,19 @@
       </div>
       <div id="staffBox"></div>
     </div>
+
     <script>
+      // 1. Authentication Check
       let empId = sessionStorage.getItem("emp_id");
 
       if (!empId) {
         alert("Please login first");
         window.location = "{% url 'login_page' %}";
       }
-      /*
-fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
-.then(r=>r.json())
-.then(data=>{
- let box = document.getElementById("staffBox");
-
- data.forEach(c=>{
-   box.innerHTML += `
-   <div class="block">
-     <h3>${c.title}</h3>
-     <p>Status: ${c.status}</p>
-     <button onclick="update(${c.id},'In Progress')">mark In Progress</button>
-     <button onclick="update(${c.id},'Solved')">Solved</button>
-   </div>`;
- });
-});*/
 
       function viewComplaints(status) {
         let box = document.getElementById("staffBox");
+        
         if (status === "Solved") {
           box.innerHTML = "<h3>Solved Complaints</h3>";
         } else if (status === "In Progress") {
@@ -58,13 +46,22 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
         } else {
           box.innerHTML = "<h3>Pending Complaints</h3>";
         }
-        let sid = sessionStorage.getItem("roll");
-        const complaintsUrl = "{% url 'student_complaints' 0 'status-placeholder' %}"
-          .replace("/0/", `/${sid}/`)
-          .replace("status-placeholder", encodeURIComponent(status));
+        
+        // FIX: Safely call the STAFF endpoint using empId
+        const complaintsUrl = "{% url 'staff_complaints' 'emp-placeholder' %}".replace("emp-placeholder", empId);
+        
         fetch(complaintsUrl)
           .then((response) => response.json())
-          .then((data) => {
+          .then((allData) => {
+            
+            // FIX: The backend gives us ALL complaints for this category. We must filter them by the requested status.
+            const data = allData.filter(c => c.status === status);
+
+            if (data.length === 0) {
+                box.innerHTML += `<p>No complaints found for this status.</p>`;
+                return;
+            }
+
             if (status === "Solved") {
               data.forEach((c) => {
                 box.innerHTML += `
@@ -72,7 +69,6 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
                 <h3> ID:   ${c.id}</h3>
                 <h3>TITLE: ${c.title}</h3>
                 <p>Status: ${c.status}</p>
-                
             </div>`;
               });
             } else if (status === "In Progress") {
@@ -82,7 +78,7 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
                 <h3> ID:   ${c.id}</h3>
                 <h3>TITLE: ${c.title}</h3>
                 <p>Status: ${c.status}</p>
-                <button onclick="update(${c.id},'Solved')">Solved</button>
+                <button onclick="update(${c.id},'Solved')">Mark as Solved</button>
             </div>`;
               });
             } else {
@@ -92,20 +88,27 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
                 <h3> ID:   ${c.id}</h3>
                 <h3>TITLE: ${c.title}</h3>
                 <p>Status: ${c.status}</p>
-                <button onclick="update(${c.id},'In Progress')">mark In Progress</button>
-                <button onclick="update(${c.id},'Solved')">Solved</button>
+                <button onclick="update(${c.id},'In Progress')">Mark In Progress</button>
+                <button onclick="update(${c.id},'Solved')">Mark as Solved</button>
             </div>`;
               });
             }
+          })
+          .catch(err => {
+              console.error(err);
+              box.innerHTML += `<p>Error loading complaints.</p>`;
           });
       }
+
       function update(id, status) {
+        // Safe fetch with no variables in the Django tag
         fetch("{% url 'update_status' %}", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: id, status: status }),
-        }).then(() => location.reload());
+        }).then(() => location.reload()); // Reloads page to show updated status
       }
+
       function searchComplaint() {
         let cid = document.getElementById("search").value;
 
@@ -114,6 +117,7 @@ fetch("http://127.0.0.1:8000/staff_complaints/" + empId)
           return;
         }
 
+        // Safe URL generation
         const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
         fetch(searchUrl)
           .then((response) => response.json())
