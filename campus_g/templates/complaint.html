@@ -5,42 +5,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Complaint</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
 </head>
 <body>
-        
-<div class="container">
-    <h2>Register Complaint</h2>
-    
-    <input id="title" placeholder="Title">
-    <textarea id="desc" placeholder="Description"></textarea>
-    
-    <select id="category">
-        <option value="" disabled selected>Select Category</option>
-        <option value="Electrical">Electrical</option>
-        <option value="Water">Water</option>
-        <option value="Furniture">Furniture</option>
-        <option value="Civil">Civil</option>
-        <option value="Network">Network</option>
-        <option value="Sanitation">Sanitation</option>
-    </select>
+<main class="page-shell">
+    <section class="auth-layout">
+        <aside class="surface-panel auth-aside">
+            <div>
+                <span class="eyebrow">New Complaint</span>
+                <h1 class="page-title">Submit an issue with a clearer workflow.</h1>
+                <p class="page-subtitle">
+                    Share the problem, map it to the right category, and route it to the appropriate hostel support team.
+                </p>
+            </div>
 
-    <select id="hostel">
-        <option value="" disabled selected>Select Your Hostel</option>
-        <option value="1">Hostel A</option>
-        <option value="2">Hostel B</option>
-        <option value="3">Hostel C</option>
-    </select>
-    
-    <input type="file" id="photo">
-    
-    <button onclick="addComplaint()">Submit</button>
-</div>
+            <ul class="feature-list">
+                <li>
+                    <span class="feature-icon">01</span>
+                    <div>
+                        <p class="feature-title">Better routing</p>
+                        <p class="feature-copy">Select the correct category so the issue reaches the right operational team.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">02</span>
+                    <div>
+                        <p class="feature-title">Faster review</p>
+                        <p class="feature-copy">Write a short but specific description so staff can understand the issue quickly.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">03</span>
+                    <div>
+                        <p class="feature-title">Track afterward</p>
+                        <p class="feature-copy">Once submitted, your complaint appears in the student dashboard with live status changes.</p>
+                    </div>
+                </li>
+            </ul>
+        </aside>
+
+        <section class="container compact">
+            <div class="section-stack">
+                <div>
+                    <span class="eyebrow">Issue Details</span>
+                    <h2>Register Complaint</h2>
+                    <p class="page-subtitle">Describe the issue clearly so the support team can review it without delay.</p>
+                </div>
+
+                <div class="form-stack">
+                    <div class="field">
+                        <label for="title">Complaint Title</label>
+                        <input id="title" placeholder="Short title for the complaint">
+                    </div>
+
+                    <div class="field">
+                        <label for="desc">Description</label>
+                        <textarea id="desc" placeholder="Explain the issue, location, and urgency"></textarea>
+                    </div>
+
+                    <div class="callout-grid">
+                        <div class="field">
+                            <label for="category">Category</label>
+                            <select id="category">
+                                <option value="" disabled selected>Select Category</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Water">Water</option>
+                                <option value="Furniture">Furniture</option>
+                                <option value="Civil">Civil</option>
+                                <option value="Network">Network</option>
+                                <option value="Sanitation">Sanitation</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="hostel">Hostel</label>
+                            <select id="hostel">
+                                <option value="" disabled selected>Select Your Hostel</option>
+                                <option value="1">Hostel A</option>
+                                <option value="2">Hostel B</option>
+                                <option value="3">Hostel C</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="photo">Reference Photo</label>
+                        <input type="file" id="photo">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button onclick="addComplaint()">Submit Complaint</button>
+                </div>
+            </div>
+        </section>
+    </section>
+</main>
 
 <script>
-function addComplaint(){
+function addComplaint() {
     let rollNumber = sessionStorage.getItem("roll");
-    if(!rollNumber){
+    if (!rollNumber) {
         alert("You must be logged in to register a complaint.");
         window.location = "{% url 'login_page' %}";
         return;
@@ -51,12 +116,12 @@ function addComplaint(){
     let category = document.getElementById("category").value;
     let hostelId = parseInt(document.getElementById("hostel").value);
 
-    if(!title || !desc || !category || isNaN(hostelId)){
+    if (!title || !desc || !category || isNaN(hostelId)) {
         alert("Please fill in all fields and select a hostel.");
         return;
     }
 
-    fetch("{% url 'register_complaint' %}",{
+    fetch("{% url 'register_complaint' %}", {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -67,22 +132,19 @@ function addComplaint(){
             hostel_id: hostelId
         })
     })
-    .then(response => {
-        if(!response.ok) throw new Error("Server Error");
+    .then((response) => {
+        if (!response.ok) throw new Error("Server Error");
         return response.json();
     })
-    .then(d => {
-        if(d.success){
-            // Save the ID in session storage to use on the next page
-            sessionStorage.setItem("complaint_id", d.complaint_id);
-            
-            // Redirect to the dedicated success page!
-            window.location = "{% url 'complaint_success' %}"; 
+    .then((data) => {
+        if (data.success) {
+            sessionStorage.setItem("complaint_id", data.complaint_id);
+            window.location = "{% url 'complaint_success' %}";
         } else {
-            alert("Failed to register complaint. " + (d.error || ""));
+            alert("Failed to register complaint. " + (data.error || ""));
         }
     })
-    .catch(error => {
+    .catch((error) => {
         console.error("Error:", error);
         alert("An error occurred. Make sure your category exactly matches the database!");
     });

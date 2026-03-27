@@ -5,38 +5,104 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Student Registration</title>
-<link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
+<link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
 </head>
-
 <body>
+<main class="page-shell">
+    <section class="auth-layout">
+        <aside class="surface-panel auth-aside">
+            <div>
+                <span class="eyebrow">Student Onboarding</span>
+                <h1 class="page-title">Create an account and start reporting issues.</h1>
+                <p class="page-subtitle">
+                    Register once to track every complaint, monitor progress, and keep your grievance history in one place.
+                </p>
+            </div>
 
-<div class="container">
+            <ul class="feature-list">
+                <li>
+                    <span class="feature-icon">A</span>
+                    <div>
+                        <p class="feature-title">Complaint tracking</p>
+                        <p class="feature-copy">See pending, in-progress, and solved requests in a cleaner dashboard.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">B</span>
+                    <div>
+                        <p class="feature-title">Hostel mapping</p>
+                        <p class="feature-copy">Keep issue routing accurate by associating requests with the right hostel.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">C</span>
+                    <div>
+                        <p class="feature-title">Simple access</p>
+                        <p class="feature-copy">Use your credentials anytime to return to the same student workspace.</p>
+                    </div>
+                </li>
+            </ul>
+        </aside>
 
-<h2>Student Registration</h2>
+        <section class="container compact">
+            <div class="section-stack">
+                <div>
+                    <span class="eyebrow">Create Account</span>
+                    <h2>Student Registration</h2>
+                    <p class="page-subtitle">Fill in your basic details to create your student account.</p>
+                </div>
 
-<input id="userId" placeholder="Roll Number">
-<input id="name" placeholder="Full Name">
-<input id="mail" placeholder="Email">
-<input id="mobile" placeholder="Mobile Number">
-<input id="password" type="password" placeholder="Password">
+                <div class="form-stack">
+                    <div class="callout-grid">
+                        <div class="field">
+                            <label for="userId">Roll Number</label>
+                            <input id="userId" placeholder="Enter Roll Number">
+                        </div>
+                        <div class="field">
+                            <label for="name">Full Name</label>
+                            <input id="name" placeholder="Enter Full Name">
+                        </div>
+                    </div>
 
-<select id="hostel">
-    <option value="" disabled selected>Select Your Hostel</option>
-    <option value="1">Hostel A</option>
-    <option value="2">Hostel B</option>
-    <option value="3">Hostel C</option>
-</select>
+                    <div class="callout-grid">
+                        <div class="field">
+                            <label for="mail">Email</label>
+                            <input id="mail" placeholder="Enter Email">
+                        </div>
+                        <div class="field">
+                            <label for="mobile">Mobile Number</label>
+                            <input id="mobile" placeholder="Enter Mobile Number">
+                        </div>
+                    </div>
 
-<button onclick="registerStudent()">Create Account</button>
+                    <div class="callout-grid">
+                        <div class="field">
+                            <label for="password">Password</label>
+                            <input id="password" type="password" placeholder="Create Password">
+                        </div>
+                        <div class="field">
+                            <label for="hostel">Hostel</label>
+                            <select id="hostel">
+                                <option value="" disabled selected>Select Your Hostel</option>
+                                <option value="1">Hostel A</option>
+                                <option value="2">Hostel B</option>
+                                <option value="3">Hostel C</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-<p>Already registered?
-<a href="{% url 'login_page' %}">Login Here</a>
-</p>
-
-</div>
+                <div class="form-actions">
+                    <button onclick="registerStudent()">Create Account</button>
+                    <a class="btn secondary inline" href="{% url 'login_page' %}">Back to Login</a>
+                </div>
+            </div>
+        </section>
+    </section>
+</main>
 
 <script>
-function registerStudent(){
+function registerStudent() {
     let roll = document.getElementById("userId").value;
     let name = document.getElementById("name").value;
     let mail = document.getElementById("mail").value;
@@ -44,15 +110,15 @@ function registerStudent(){
     let password = document.getElementById("password").value;
     let hostelId = parseInt(document.getElementById("hostel").value);
 
-    if(!roll || !name || !password || isNaN(hostelId)){
+    if (!roll || !name || !password || isNaN(hostelId)) {
         alert("Please fill in all required fields and select a hostel.");
         return;
     }
 
-    fetch("{% url 'signup' %}",{
-        method:"POST",
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
+    fetch("{% url 'signup' %}", {
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
             roll: roll,
             name: name,
             mail: mail,
@@ -61,9 +127,9 @@ function registerStudent(){
             hostel_id: hostelId
         })
     })
-    .then(res => res.json())
-    .then(data=>{
-        if(data.success){
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.success) {
             alert("Student Registered Successfully!");
             window.location = "{% url 'login_page' %}";
         } else {
@@ -74,5 +140,3 @@ function registerStudent(){
 </script>
 </body>
 </html>
-
-

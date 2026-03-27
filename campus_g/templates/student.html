@@ -5,149 +5,278 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
 </head>
 <body>
-        
-<div class="container" style="max-width: 800px;">
-    <h2>Student Dashboard</h2>
-    <input id="search" placeholder="Enter Complaint ID">
-    <button onclick="searchComplaint()">Check Status</button>
-    <hr>
-    <button onclick="location='{% url 'complaint_page' %}'">Register New Complaint</button>
-</div>
+<main class="page-shell">
+    <section class="container wide">
+        <div class="dashboard-header">
+            <div>
+                <span class="eyebrow">Student Workspace</span>
+                <h1 class="page-title dashboard-title">Track every complaint from one cleaner dashboard.</h1>
+                <p class="page-subtitle">
+                    Search by complaint ID, filter by status, and open rich details without losing your place.
+                </p>
+            </div>
 
-<div class="my_complaints" style="max-width: 800px; margin: auto;">
-    <div class="box solved">
-        <button onclick="viewComplaints('Solved')">Solved</button>
-    </div>
-    <div class="box inprogress">
-        <button onclick="viewComplaints('In Progress')">In Progress</button>
-    </div>
-    <div class="box pending">
-        <button onclick="viewComplaints('Pending')">Pending</button>
-    </div>
-</div>
+            <div class="dashboard-tags">
+                <span class="tag">Live tracking</span>
+                <span class="tag">Student view</span>
+            </div>
+        </div>
 
-<div id="staffBox" style="max-width: 800px; margin: 20px auto;">
-    <p>Select a status above to view your complaints.</p>
-</div>
+        <div class="toolbar-panel">
+            <div class="search-row">
+                <div class="field">
+                    <label for="search">Complaint ID</label>
+                    <input id="search" placeholder="Enter complaint ID">
+                </div>
+                <button class="inline" onclick="searchComplaint()">Open Complaint</button>
+            </div>
+
+            <div class="toolbar-actions">
+                <button class="secondary inline" onclick="location='{% url 'complaint_page' %}'">Register New Complaint</button>
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <div class="results-head">
+                <div>
+                    <h2>My Complaints</h2>
+                    <p class="results-subtitle">Filter complaints by status to review timelines and current progress.</p>
+                </div>
+            </div>
+
+            <div class="my_complaints">
+                <div class="box solved">
+                    <button onclick="viewComplaints('Solved')">Solved</button>
+                </div>
+                <div class="box inprogress">
+                    <button onclick="viewComplaints('In Progress')">In Progress</button>
+                </div>
+                <div class="box pending">
+                    <button onclick="viewComplaints('Pending')">Pending</button>
+                </div>
+            </div>
+
+            <div class="subtle-separator"></div>
+
+            <div id="staffBox" class="section-stack">
+                <div class="empty-state">
+                    <p class="empty-title">Select a status to begin</p>
+                    <p class="empty-copy">Your complaint list will appear here with richer detail cards and tracking information.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
 
 <script>
-// --- 1. Renders the basic summary list ---
-function viewComplaints(status){
-    let box = document.getElementById("staffBox");
-    
-    if(status === "Solved"){
-        box.innerHTML = "<h3>✅ Solved Complaints</h3>";
-    } else if(status === "In Progress"){
-        box.innerHTML = "<h3>⏳ In Progress Complaints</h3>";
-    } else {
-        box.innerHTML = "<h3>📋 Pending Complaints</h3>";
-    }
-    
-    let sid = sessionStorage.getItem("roll");
-    
-    if(!sid){
+function statusClass(status) {
+    if (status === "Solved") return "status-solved";
+    if (status === "In Progress") return "status-progress";
+    return "status-pending";
+}
+
+function statusBadge(status) {
+    return `<span class="status-badge ${statusClass(status)}">${status}</span>`;
+}
+
+function emptyState(title, copy) {
+    return `
+        <div class="empty-state">
+            <p class="empty-title">${title}</p>
+            <p class="empty-copy">${copy}</p>
+        </div>
+    `;
+}
+
+function renderComplaintCard(complaint) {
+    return `
+        <article class="ticket-card">
+            <div class="ticket-card-head">
+                <div>
+                    <span class="ticket-eyebrow">Complaint #${complaint.id}</span>
+                    <h3 class="ticket-title">${complaint.title}</h3>
+                </div>
+                ${statusBadge(complaint.status)}
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <span class="meta-label">Category</span>
+                    <strong class="meta-value">${complaint.category_name || "General"}</strong>
+                </div>
+                <div class="meta-card">
+                    <span class="meta-label">Current State</span>
+                    <strong class="meta-value">${complaint.status}</strong>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="inline" onclick="showDetails(${complaint.id})">View Complaint Details</button>
+            </div>
+        </article>
+    `;
+}
+
+function viewComplaints(status) {
+    const box = document.getElementById("staffBox");
+    const sid = sessionStorage.getItem("roll");
+
+    if (!sid) {
         alert("Please login first.");
         window.location = "{% url 'login_page' %}";
         return;
     }
 
+    box.innerHTML = emptyState("Loading complaints", "Fetching the latest complaints for this status.");
+
     const complaintsUrl = "{% url 'student_complaints' 'roll-placeholder' 'status-placeholder' %}"
         .replace("roll-placeholder", sid)
         .replace("status-placeholder", encodeURIComponent(status));
-        
-    fetch(complaintsUrl)
-    .then(response => {
-        if(!response.ok) throw new Error("Server Error");
-        return response.json();
-    })
-    .then(data => {
-        if(data.length === 0){
-            box.innerHTML += `<p>No complaints found for this status.</p>`;
-            return;
-        }
 
-        // Generate clean summary cards
-        data.forEach(c => {
-            box.innerHTML += `
-            <div class="block" style="border: 1px solid #ccc; padding: 15px; margin-top: 10px; border-radius: 8px;">
-                 <h4 style="margin: 0; color: #333;">Complaint #${c.id}</h4>
-                 <h3 style="margin: 5px 0; color: #0056b3;">${c.title}</h3>
-                 <p style="margin: 2px 0;"><strong>Category:</strong> ${c.category_name || "General"}</p>
-                 <p style="margin: 2px 0;"><strong>Status:</strong> ${c.status}</p>
-                 
-                 <button style="margin-top: 15px; background: #007bff; width: 100%; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;" onclick="showDetails(${c.id})">
-                    🔍 View Full Details
-                </button>
-            </div>`;
+    fetch(complaintsUrl)
+        .then((response) => {
+            if (!response.ok) throw new Error("Server Error");
+            return response.json();
+        })
+        .then((data) => {
+            if (data.length === 0) {
+                box.innerHTML = emptyState(
+                    `No ${status.toLowerCase()} complaints`,
+                    "When complaints move into this state they will appear here."
+                );
+                return;
+            }
+
+            const cards = data.map(renderComplaintCard).join("");
+            box.innerHTML = `
+                <div class="results-head">
+                    <div>
+                        <p class="results-title">${status} Complaints</p>
+                        <p class="results-subtitle">Review each complaint and open its detailed view.</p>
+                    </div>
+                    ${statusBadge(status)}
+                </div>
+                <div class="ticket-list">${cards}</div>
+            `;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            box.innerHTML = emptyState(
+                "Unable to load complaints",
+                "Please try again in a moment. The complaint service may be temporarily unavailable."
+            );
         });
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        box.innerHTML += `<p style="color:red;">Error loading complaints from database.</p>`;
-    });
 }
 
-// --- 2. Fetches and displays the Rich Details View (No Staff Actions/Workers) ---
 function showDetails(cid) {
-    let box = document.getElementById("staffBox");
-    box.innerHTML = `<p>Loading detailed information...</p>`;
+    const box = document.getElementById("staffBox");
+    box.innerHTML = emptyState("Loading complaint details", "Fetching the latest complaint timeline and support details.");
 
     const url = "{% url 'complaint_details' 0 %}".replace("/0/", `/${cid}/`);
 
     fetch(url)
-    .then(res => res.json())
-    .then(data => {
-        if(!data.success) {
-            box.innerHTML = `<p style="color:red;">Error loading details.</p>`;
-            return;
-        }
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.success === false) {
+                box.innerHTML = emptyState("Unable to load complaint", "The complaint details could not be retrieved right now.");
+                return;
+            }
 
-        // Build the student-friendly rich-detail UI
-        let html = `
-        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top:15px; text-align: left;">
-            <button onclick="viewComplaints('${data.status}')" style="margin-bottom: 15px; background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">⬅ Back to List</button>
+            const solvedPanel = data.status === "Solved"
+                ? `
+                    <div class="notice-card">
+                        <p class="notice-title">Resolution Timestamp</p>
+                        <p class="notice-copy">This complaint was marked solved on ${data.solved_date}.</p>
+                    </div>
+                `
+                : `
+                    <div class="notice-card">
+                        <p class="notice-title">Monitoring Note</p>
+                        <p class="notice-copy">Your assigned warden is tracking this issue and future status changes will appear here.</p>
+                    </div>
+                `;
 
-            <h2 style="color: #0056b3; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
-                #${data.id} - ${data.title}
-            </h2>
-            
-            <p style="font-size: 1.1em; line-height: 1.5; background: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #0056b3;">
-                <strong>Description:</strong><br>${data.description}
-            </p>
-            
-            <div style="margin: 20px 0; padding: 15px; background: #e9ecef; border-radius: 5px;">
-                <h4 style="margin-top: 0; color: #333;">Timeline & Details</h4>
-                <p style="margin: 5px 0;"><strong>Category:</strong> ${data.category}</p>
-                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="font-weight: bold; color: ${data.status === 'Solved' ? '#28a745' : '#ffc107'};">${data.status}</span></p>
-                <p style="margin: 5px 0;"><strong>Filed On:</strong> ${data.created_date}</p>
-                ${data.status === 'Solved' ? `<p style="margin: 5px 0; color: #28a745;"><strong>✅ Solved On:</strong> ${data.solved_date}</p>` : ''}
-            </div>
-            
-            <p style="color: gray; font-size: 0.9em; text-align: center; margin-top: 20px;">
-                <em>Your assigned warden is monitoring this issue.</em>
-            </p>
-        </div>`;
-        
-        box.innerHTML = html;
-    });
+            box.innerHTML = `
+                <div class="detail-view">
+                    <div class="results-head">
+                        <div>
+                            <span class="eyebrow">Complaint ${data.id}</span>
+                            <h2>#${data.id} - ${data.title}</h2>
+                            <p class="results-subtitle">A detailed view of the complaint, timeline, and current tracking status.</p>
+                        </div>
+                        ${statusBadge(data.status)}
+                    </div>
+
+                    <div class="action-row">
+                        <button class="secondary inline" onclick="viewComplaints('${data.status}')">Back to ${data.status} Complaints</button>
+                    </div>
+
+                    <section class="description-panel">
+                        <p class="panel-title">Issue Description</p>
+                        <p class="panel-copy">${data.description}</p>
+                    </section>
+
+                    <div class="detail-grid">
+                        <section class="detail-panel">
+                            <p class="panel-title">Request Details</p>
+                            <div class="info-list">
+                                <div>
+                                    <span class="info-label">Category</span>
+                                    <span class="info-value">${data.category}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Status</span>
+                                    <span class="info-value">${data.status}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Filed On</span>
+                                    <span class="info-value">${data.created_date}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="detail-panel">
+                            <p class="panel-title">Support Ownership</p>
+                            <div class="info-list">
+                                <div>
+                                    <span class="info-label">Monitoring Team</span>
+                                    <span class="info-value">Assigned hostel support</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Update Visibility</span>
+                                    <span class="info-value">Shown in your student dashboard</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Follow Up</span>
+                                    <span class="info-value">Use the complaint ID for quick lookup</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    ${solvedPanel}
+                </div>
+            `;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            box.innerHTML = emptyState("Unable to load complaint", "Please try again after the connection recovers.");
+        });
 }
 
-// --- 3. Search Bar Logic ---
-function searchComplaint(){
-    let cid = document.getElementById("search").value;
+function searchComplaint() {
+    const cid = document.getElementById("search").value;
 
-    if(cid === ""){
+    if (cid === "") {
         alert("Please enter Complaint ID");
         return;
     }
 
-    // Instead of an alert, we can directly push them into the beautiful details view!
     showDetails(cid);
 }
 </script>
-
 </body>
 </html>

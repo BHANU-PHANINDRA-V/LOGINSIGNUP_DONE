@@ -1,206 +1,415 @@
 {% load static %}
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Staff Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive" />
-  </head>
-  <body>
-    <div class="container" style="max-width: 800px;">
-      <h2>Staff Dashboard</h2>
-      
-      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <input id="search" placeholder="Enter Complaint ID" style="margin-bottom: 0;" />
-          <button onclick="searchComplaint()" style="width: auto; margin-bottom: 0;">Check Status</button>
-      </div>
-      
-      <div class="my_complaints">
-        <div class="box solved"><button onclick="viewComplaints('Solved')">Solved</button></div>
-        <div class="box inprogress"><button onclick="viewComplaints('In Progress')">In Progress</button></div>
-        <div class="box pending"><button onclick="viewComplaints('Pending')">Pending</button></div>
-        <div class="box"><button onclick="showAddWorkerForm()" style="color: #4b5e32; border-color: #4b5e32;">➕ Add Worker</button></div>
-      </div>
-      
-      <div id="staffBox">
-          <p>Select an option above to manage complaints or workers.</p>
-      </div>
-    </div>
-
-    <script>
-      let empId = sessionStorage.getItem("emp_id");
-
-      if (!empId) {
-        alert("Please login first");
-        window.location = "{% url 'login_page' %}";
-      }
-
-      // --- NEW: Render the Add Worker Form ---
-      function showAddWorkerForm() {
-          let box = document.getElementById("staffBox");
-          box.innerHTML = `
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); text-align: left;">
-                <h3 style="color: var(--primary-btn); border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">Add Technical Worker</h3>
-                <input id="w_name" placeholder="Worker Name">
-                <input id="w_mobile" placeholder="Mobile Number">
-                <select id="w_category">
-                    <option value="" disabled selected>Select Worker Category</option>
-                    <option value="Electrical">Electrical</option>
-                    <option value="Water">Water</option>
-                    <option value="Furniture">Furniture</option>
-                    <option value="Civil">Civil</option>
-                    <option value="Network">Network</option>
-                    <option value="Sanitation">Sanitation</option>
-                </select>
-                <button onclick="submitNewWorker()" style="margin-top: 10px;">Save Worker to Database</button>
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2" />
+</head>
+<body>
+<main class="page-shell">
+    <section class="container wide">
+        <div class="dashboard-header">
+            <div>
+                <span class="eyebrow">Staff Operations</span>
+                <h1 class="page-title dashboard-title">Search, assign, and move complaints through resolution.</h1>
+                <p class="page-subtitle">
+                    Use one cleaner workspace to review complaint details, assign technical workers, and keep issue handling organized.
+                </p>
             </div>
-          `;
-      }
 
-      // --- NEW: Send new worker to backend ---
-      function submitNewWorker() {
-          let name = document.getElementById("w_name").value;
-          let mobile = document.getElementById("w_mobile").value;
-          let category = document.getElementById("w_category").value;
+            <div class="dashboard-tags">
+                <span class="tag">Staff workspace</span>
+                <span class="tag">Operational control</span>
+            </div>
+        </div>
 
-          if(!name || !mobile || !category) {
-              alert("Please fill all worker details.");
-              return;
-          }
+        <div class="toolbar-panel">
+            <div class="search-row">
+                <div class="field">
+                    <label for="search">Complaint ID</label>
+                    <input id="search" placeholder="Enter complaint ID">
+                </div>
+                <button class="inline" onclick="searchComplaint()">Open Complaint</button>
+            </div>
 
-          fetch("{% url 'add_worker' %}", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: name, mobile: mobile, category: category })
-          })
-          .then(res => res.json())
-          .then(data => {
-              if(data.success) {
-                  alert("Worker added successfully!");
-                  document.getElementById("w_name").value = "";
-                  document.getElementById("w_mobile").value = "";
-              } else {
-                  alert("Failed to add worker: " + data.error);
-              }
-          });
-      }
+            <div class="toolbar-actions">
+                <button class="secondary inline" onclick="showAddWorkerForm()">Add Technical Worker</button>
+            </div>
+        </div>
 
-      function viewComplaints(status) {
-        let box = document.getElementById("staffBox");
-        
-        if (status === "Solved") box.innerHTML = "<h3>✅ Solved Complaints</h3>";
-        else if (status === "In Progress") box.innerHTML = "<h3>⏳ In Progress Complaints</h3>";
-        else box.innerHTML = "<h3>📋 Pending Complaints</h3>";
-        
-        const complaintsUrl = "{% url 'staff_complaints' 0 %}".replace("/0/", `/${empId}/`);
-        
-        fetch(complaintsUrl)
-          .then((response) => response.json())
-          .then((allData) => {
-            const data = allData.filter(c => c.status === status);
-            if (data.length === 0) {
-                box.innerHTML += `<p>No complaints found for this status.</p>`;
-                return;
-            }
-            data.forEach((c) => {
-                let htmlBlock = `
-                <div class="block">
-                    <h4 style="margin: 0; color: #333;">Complaint #${c.id}</h4>
-                    <h3 style="margin: 5px 0;">${c.title}</h3>
-                    <p><strong>Category:</strong> ${c.category_name}</p>
-                    <p><strong>Status:</strong> ${c.status}</p>
-                    <button style="margin-top: 15px; background: var(--primary-btn); width: 100%; color: white;" onclick="showDetails(${c.id})">
-                        🔍 View Full Details & Workers
-                    </button>
-                </div>`;
-                box.innerHTML += htmlBlock;
-            });
-          });
-      }
+        <div class="results-panel">
+            <div class="results-head">
+                <div>
+                    <h2>Complaint Management</h2>
+                    <p class="results-subtitle">Filter the queue by status or open a complaint directly by its ID.</p>
+                </div>
+            </div>
 
-      function showDetails(cid) {
-        let box = document.getElementById("staffBox");
-        box.innerHTML = `<p>Loading detailed information...</p>`;
-        const url = "{% url 'complaint_details' 0 %}".replace("/0/", `/${cid}/`);
+            <div class="my_complaints">
+                <div class="box solved"><button onclick="viewComplaints('Solved')">Solved</button></div>
+                <div class="box inprogress"><button onclick="viewComplaints('In Progress')">In Progress</button></div>
+                <div class="box pending"><button onclick="viewComplaints('Pending')">Pending</button></div>
+            </div>
 
-        fetch(url)
-        .then(res => res.json())
-        .then(data => {
-            let html = `
-            <div style="background: var(--bg-card); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-top:15px; text-align: left;">
-                <button onclick="viewComplaints('${data.status}')" style="margin-bottom: 15px; background: #6c757d; padding: 5px 15px;">⬅ Back to List</button>
-                <h2 style="color: var(--primary-btn); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">#${data.id} - ${data.title}</h2>
-                <p style="font-size: 1.1em; line-height: 1.5; background: #f9f9f9; padding: 15px; border-radius: 5px;"><strong>Description:</strong><br>${data.description}</p>
-                
-                <div style="display: flex; gap: 20px; flex-wrap: wrap; margin: 20px 0; padding: 15px; background: #f4f5f0; border-radius: 5px;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <h4 style="margin-top: 0;">Issue Details</h4>
-                        <p><strong>Category:</strong> ${data.category}</p>
-                        <p><strong>Status:</strong> ${data.status}</p>
-                        <p><strong>Filed On:</strong> ${data.created_date}</p>
+            <div class="subtle-separator"></div>
+
+            <div id="staffBox" class="section-stack">
+                <div class="empty-state">
+                    <p class="empty-title">Choose an operational view</p>
+                    <p class="empty-copy">Complaint lists, worker assignment forms, and detailed complaint views will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script>
+let empId = sessionStorage.getItem("emp_id");
+
+if (!empId) {
+    alert("Please login first");
+    window.location = "{% url 'login_page' %}";
+}
+
+function statusClass(status) {
+    if (status === "Solved") return "status-solved";
+    if (status === "In Progress") return "status-progress";
+    return "status-pending";
+}
+
+function statusBadge(status) {
+    return `<span class="status-badge ${statusClass(status)}">${status}</span>`;
+}
+
+function emptyState(title, copy) {
+    return `
+        <div class="empty-state">
+            <p class="empty-title">${title}</p>
+            <p class="empty-copy">${copy}</p>
+        </div>
+    `;
+}
+
+function showAddWorkerForm() {
+    const box = document.getElementById("staffBox");
+    box.innerHTML = `
+        <div class="detail-view">
+            <div class="results-head">
+                <div>
+                    <p class="results-title">Add Technical Worker</p>
+                    <p class="results-subtitle">Register a worker so complaints can be assigned more accurately by category.</p>
+                </div>
+            </div>
+
+            <section class="detail-panel">
+                <div class="form-stack">
+                    <div class="callout-grid">
+                        <div class="field">
+                            <label for="w_name">Worker Name</label>
+                            <input id="w_name" placeholder="Enter worker name">
+                        </div>
+                        <div class="field">
+                            <label for="w_mobile">Mobile Number</label>
+                            <input id="w_mobile" placeholder="Enter mobile number">
+                        </div>
                     </div>
-                    <div style="flex: 1; min-width: 200px;">
-                        <h4 style="margin-top: 0;">Student Details</h4>
-                        <p><strong>Name:</strong> ${data.student_name} (${data.student_roll})</p>
-                        <p><strong>Hostel:</strong> ${data.hostel}</p>
-                        <p><strong>Contact:</strong> 📞 ${data.student_mobile}</p>
+
+                    <div class="field">
+                        <label for="w_category">Category</label>
+                        <select id="w_category">
+                            <option value="" disabled selected>Select Worker Category</option>
+                            <option value="Electrical">Electrical</option>
+                            <option value="Water">Water</option>
+                            <option value="Furniture">Furniture</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Network">Network</option>
+                            <option value="Sanitation">Sanitation</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="inline" onclick="submitNewWorker()">Save Worker</button>
                     </div>
                 </div>
+            </section>
+        </div>
+    `;
+}
 
-                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px;">Assigned Technical Workers (${data.category})</h3>
+function submitNewWorker() {
+    const name = document.getElementById("w_name").value;
+    const mobile = document.getElementById("w_mobile").value;
+    const category = document.getElementById("w_category").value;
+
+    if (!name || !mobile || !category) {
+        alert("Please fill all worker details.");
+        return;
+    }
+
+    fetch("{% url 'add_worker' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, mobile: mobile, category: category })
+    })
+    .then((res) => res.json())
+    .then((data) => {
+        if (data.success) {
+            alert("Worker added successfully!");
+            showAddWorkerForm();
+        } else {
+            alert("Failed to add worker: " + data.error);
+        }
+    });
+}
+
+function renderComplaintCard(complaint) {
+    return `
+        <article class="ticket-card">
+            <div class="ticket-card-head">
+                <div>
+                    <span class="ticket-eyebrow">Complaint #${complaint.id}</span>
+                    <h3 class="ticket-title">${complaint.title}</h3>
+                </div>
+                ${statusBadge(complaint.status)}
+            </div>
+
+            <div class="meta-grid">
+                <div class="meta-card">
+                    <span class="meta-label">Category</span>
+                    <strong class="meta-value">${complaint.category_name}</strong>
+                </div>
+                <div class="meta-card">
+                    <span class="meta-label">Operational State</span>
+                    <strong class="meta-value">${complaint.status}</strong>
+                </div>
+            </div>
+
+            <div class="action-row">
+                <button class="inline" onclick="showDetails(${complaint.id})">Open Complaint Details</button>
+            </div>
+        </article>
+    `;
+}
+
+function viewComplaints(status) {
+    const box = document.getElementById("staffBox");
+    box.innerHTML = emptyState("Loading complaints", "Fetching the current complaint queue for this status.");
+
+    const complaintsUrl = "{% url 'staff_complaints' 0 %}".replace("/0/", `/${empId}/`);
+
+    fetch(complaintsUrl)
+        .then((response) => response.json())
+        .then((allData) => {
+            const data = allData.filter((complaint) => complaint.status === status);
+
+            if (data.length === 0) {
+                box.innerHTML = emptyState(
+                    `No ${status.toLowerCase()} complaints`,
+                    "When complaints reach this state they will be listed here for staff review."
+                );
+                return;
+            }
+
+            const cards = data.map(renderComplaintCard).join("");
+            box.innerHTML = `
+                <div class="results-head">
+                    <div>
+                        <p class="results-title">${status} Complaints</p>
+                        <p class="results-subtitle">Open any complaint to inspect details, student context, and available actions.</p>
+                    </div>
+                    ${statusBadge(status)}
+                </div>
+                <div class="ticket-list">${cards}</div>
             `;
-
-            if(data.workers.length > 0) {
-                html += `<ul style="list-style-type: none; padding: 0;">`;
-                data.workers.forEach(w => {
-                    html += `<li style="padding: 10px; background: #fdfdfc; border: 1px solid var(--border-color); margin-bottom: 5px; border-radius: 5px;">👨‍🔧 <strong>${w.name}</strong> <span style="float: right;">📞 ${w.mobile}</span></li>`;
-                });
-                html += `</ul>`;
-            } else {
-                html += `<p style="color: gray; font-style: italic;">No specific workers assigned to this category yet. Click 'Add Worker' above to assign one.</p>`;
-            }
-
-            html += `<div style="margin-top: 25px; padding-top: 15px; border-top: 2px solid #eee; text-align: right;">`;
-            if(data.status === "Pending") {
-                html += `
-                    <button onclick="updateStatus(${data.id}, 'In Progress')" style="background: var(--status-progress);">⏳ Mark In Progress</button>
-                    <button onclick="updateStatus(${data.id}, 'Solved')" style="background: var(--status-solved);">✅ Mark as Solved</button>
-                `;
-            } else if(data.status === "In Progress") {
-                html += `<button onclick="updateStatus(${data.id}, 'Solved')" style="background: var(--status-solved);">✅ Mark as Solved</button>`;
-            } else if(data.status === "Solved") {
-                html += `<p style="color: var(--status-solved); font-weight: bold; text-align: center;">🎉 This complaint has been successfully resolved.</p>`;
-            }
-
-            html += `</div></div>`;
-            box.innerHTML = html;
-        });
-      }
-
-      function updateStatus(id, newStatus) {
-        fetch("{% url 'update_status' %}", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: id, status: newStatus, emp_id: empId }),
         })
-        .then(response => response.json())
-        .then(data => {
-            if(data.success) showDetails(id);
+        .catch((error) => {
+            console.error("Error:", error);
+            box.innerHTML = emptyState(
+                "Unable to load complaints",
+                "Please try again in a moment. The complaint list could not be retrieved."
+            );
         });
-      }
+}
 
-      function searchComplaint() {
-        let cid = document.getElementById("search").value;
-        if (cid === "") return;
-        const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
-        fetch(searchUrl)
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.found) alert(`Complaint Status: ${data.status}\nTitle: ${data.title}`);
-            else alert("Complaint Not Found");
-          });
-      }
-    </script>
-  </body>
+function workerMarkup(workers) {
+    if (!workers.length) {
+        return `
+            <div class="notice-card">
+                <p class="notice-title">No workers assigned yet</p>
+                <p class="notice-copy">Add a technical worker above to improve assignment coverage for this category.</p>
+            </div>
+        `;
+    }
+
+    return `
+        <ul class="worker-list">
+            ${workers.map((worker) => `
+                <li class="worker-item">
+                    <div>
+                        <span class="info-label">Assigned Worker</span>
+                        <span class="info-value">${worker.name}</span>
+                    </div>
+                    <div>
+                        <span class="info-label">Contact</span>
+                        <span class="info-value">${worker.mobile}</span>
+                    </div>
+                </li>
+            `).join("")}
+        </ul>
+    `;
+}
+
+function actionMarkup(data) {
+    if (data.status === "Pending") {
+        return `
+            <div class="form-actions">
+                <button class="secondary inline" onclick="updateStatus(${data.id}, 'In Progress')">Mark In Progress</button>
+                <button class="inline" onclick="updateStatus(${data.id}, 'Solved')">Mark as Solved</button>
+            </div>
+        `;
+    }
+
+    if (data.status === "In Progress") {
+        return `
+            <div class="form-actions">
+                <button class="inline" onclick="updateStatus(${data.id}, 'Solved')">Mark as Solved</button>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="notice-card">
+            <p class="notice-title">Resolution Complete</p>
+            <p class="notice-copy">This complaint has already been marked as solved.</p>
+        </div>
+    `;
+}
+
+function showDetails(cid) {
+    const box = document.getElementById("staffBox");
+    box.innerHTML = emptyState("Loading complaint details", "Fetching complaint details, student context, and worker assignments.");
+
+    const url = "{% url 'complaint_details' 0 %}".replace("/0/", `/${cid}/`);
+
+    fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+            if (data.success === false) {
+                box.innerHTML = emptyState("Unable to load complaint", "The complaint details could not be retrieved right now.");
+                return;
+            }
+
+            box.innerHTML = `
+                <div class="detail-view">
+                    <div class="results-head">
+                        <div>
+                            <span class="eyebrow">Complaint ${data.id}</span>
+                            <h2>#${data.id} - ${data.title}</h2>
+                            <p class="results-subtitle">Review complaint context, assigned workers, and available staff actions.</p>
+                        </div>
+                        ${statusBadge(data.status)}
+                    </div>
+
+                    <div class="action-row">
+                        <button class="secondary inline" onclick="viewComplaints('${data.status}')">Back to ${data.status} Complaints</button>
+                    </div>
+
+                    <section class="description-panel">
+                        <p class="panel-title">Issue Description</p>
+                        <p class="panel-copy">${data.description}</p>
+                    </section>
+
+                    <div class="detail-grid">
+                        <section class="detail-panel">
+                            <p class="panel-title">Issue Details</p>
+                            <div class="info-list">
+                                <div>
+                                    <span class="info-label">Category</span>
+                                    <span class="info-value">${data.category}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Status</span>
+                                    <span class="info-value">${data.status}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Filed On</span>
+                                    <span class="info-value">${data.created_date}</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="detail-panel">
+                            <p class="panel-title">Student Details</p>
+                            <div class="info-list">
+                                <div>
+                                    <span class="info-label">Student Name</span>
+                                    <span class="info-value">${data.student_name}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Roll Number</span>
+                                    <span class="info-value">${data.student_roll}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Hostel</span>
+                                    <span class="info-value">${data.hostel}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Mobile</span>
+                                    <span class="info-value">${data.student_mobile}</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="detail-panel">
+                        <p class="panel-title">Assigned Technical Workers</p>
+                        <p class="worker-copy">Category coverage for ${data.category} is shown below.</p>
+                        ${workerMarkup(data.workers)}
+                    </section>
+
+                    <section class="detail-panel">
+                        <p class="panel-title">Staff Actions</p>
+                        <p class="panel-copy">Use the controls below to move the complaint through the resolution workflow.</p>
+                        ${actionMarkup(data)}
+                    </section>
+                </div>
+            `;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            box.innerHTML = emptyState("Unable to load complaint", "Please try again after the connection recovers.");
+        });
+}
+
+function updateStatus(id, newStatus) {
+    fetch("{% url 'update_status' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, status: newStatus, emp_id: empId })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.success) showDetails(id);
+    });
+}
+
+function searchComplaint() {
+    const cid = document.getElementById("search").value;
+    if (cid === "") return;
+
+    const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
+    fetch(searchUrl)
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.found) {
+                showDetails(cid);
+            } else {
+                alert("Complaint Not Found");
+            }
+        });
+}
+</script>
+</body>
 </html>

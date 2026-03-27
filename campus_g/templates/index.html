@@ -4,48 +4,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
-
+    <title>Campus Grievance System</title>
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
 </head>
 <body>
-<h1>this is branch 25-03-26!!</h1>
-i am karthik
-<div class="container">
+<main class="page-shell">
+    <section class="hero-grid">
+        <div class="container hero-card">
+            <div>
+                <span class="eyebrow">Campus Operations Portal</span>
+                <h1 class="page-title">Resolve hostel complaints with clarity and speed.</h1>
+                <p class="page-subtitle">
+                    Give students a cleaner reporting flow and give staff a better workspace to monitor,
+                    coordinate, and close issues across campus.
+                </p>
+            </div>
 
-<h2>Campus Grievance System</h2>
+            <div class="action-row">
+                <a class="btn inline" href="{% url 'login_page' %}">Open Dashboard</a>
+                <a class="btn secondary inline" href="{% url 'signin_page' %}">Create Student Account</a>
+            </div>
+        </div>
 
-<div class="stats">
-<p>Total: <span id="total" style="background-color: blue;">x</span></p>
-<p>pending: <span id="pending" style="background-color: yellow;">0</span></p>
-<p>Solved: <span id="solved" style="background-color: green;">y</span></p>
-<p>In Progress: <span id="progress" style="background-color:red;">z</span></p>
-</div>
+        <aside class="surface-panel section-stack">
+            <div>
+                <span class="eyebrow">Live Overview</span>
+                <p class="page-subtitle">A quick pulse of current complaint activity across the system.</p>
+            </div>
 
-<a href="{% url 'login_page' %}">
-    <button type="button">Login</button>
-</a>
+            <div class="metric-grid">
+                <article class="metric-card">
+                    <span class="metric-label">Total Complaints</span>
+                    <strong class="metric-value" id="total">0</strong>
+                    <span class="metric-note">All recorded issues</span>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Pending</span>
+                    <strong class="metric-value" id="pending">0</strong>
+                    <span class="metric-note">Awaiting action</span>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">In Progress</span>
+                    <strong class="metric-value" id="progress">0</strong>
+                    <span class="metric-note">Being handled</span>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Solved</span>
+                    <strong class="metric-value" id="solved">0</strong>
+                    <span class="metric-note">Closed successfully</span>
+                </article>
+            </div>
+        </aside>
+    </section>
 
-<a href="{% url 'signin_page' %}">
-    <button type="button">Sign Up</button>
-</a>
-</div>
+    <section class="section-grid">
+        <article class="info-card">
+            <p class="panel-title">Student Friendly</p>
+            <p class="panel-copy">
+                Register complaints in a cleaner form, review progress by status, and open full complaint
+                timelines without losing context.
+            </p>
+        </article>
+        <article class="info-card">
+            <p class="panel-title">Staff Ready</p>
+            <p class="panel-copy">
+                Search complaints, assign technical workers, move requests through each resolution state,
+                and keep the workflow organized.
+            </p>
+        </article>
+        <article class="info-card">
+            <p class="panel-title">Clearer Tracking</p>
+            <p class="panel-copy">
+                Better hierarchy, status cards, and detail views make the platform feel like a proper product
+                instead of a basic form-based site.
+            </p>
+        </article>
+    </section>
+</main>
 
-<!--<script>loadStats()</script>--->
 <script>
 function loadStats() {
-    
+    fetch("{% url 'complaint_stats' %}")
+        .then((response) => response.json())
+        .then((data) => {
+            document.getElementById("total").innerText = data.total;
+            document.getElementById("solved").innerText = data.solved;
+            document.getElementById("progress").innerText = data.progress;
+            document.getElementById("pending").innerText = data.pending;
+        });
+}
 
-fetch("{% url 'complaint_stats' %}")
-.then(r=>r.json())
-.then(d=>{
- document.getElementById("total").innerText = d.total;
- document.getElementById("solved").innerText = d.solved;
- document.getElementById("progress").innerText = d.progress;
-    document.getElementById("pending").innerText = d.pending;
-});}
-
-window.onload=loadStats;
+window.onload = loadStats;
 </script>
 </body>
 </html>

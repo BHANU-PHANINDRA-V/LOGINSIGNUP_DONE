@@ -5,112 +5,169 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
-<link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
+<link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
 </head>
 <body>
+<main class="page-shell">
+    <section class="auth-layout">
+        <aside class="surface-panel auth-aside">
+            <div>
+                <span class="eyebrow">Secure Access</span>
+                <h1 class="page-title">One portal for students and staff.</h1>
+                <p class="page-subtitle">
+                    Sign in to track complaints, manage technical workers, and keep the response flow
+                    organized from one workspace.
+                </p>
+            </div>
 
-<div class="container">
-    <h2 id="title">Student Login</h2>
-    
-    <div class="role-buttons">
-        <button onclick="setRole('student')">Student</button>
-        <button onclick="setRole('staff')">Staff</button>
-    </div>
+            <ul class="feature-list">
+                <li>
+                    <span class="feature-icon">01</span>
+                    <div>
+                        <p class="feature-title">Student workspace</p>
+                        <p class="feature-copy">Review complaint timelines, search by complaint ID, and file new requests.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">02</span>
+                    <div>
+                        <p class="feature-title">Staff control</p>
+                        <p class="feature-copy">Search, inspect, assign workers, and update operational status without clutter.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="feature-icon">03</span>
+                    <div>
+                        <p class="feature-title">Cleaner experience</p>
+                        <p class="feature-copy">A more structured interface designed to feel closer to a real product dashboard.</p>
+                    </div>
+                </li>
+            </ul>
+        </aside>
 
-    <input id="username" placeholder="Enter Roll Number">
-    <input type="password" id="password" placeholder="Password">
+        <section class="container compact">
+            <div class="section-stack">
+                <div>
+                    <span class="eyebrow">Portal Login</span>
+                    <h2 id="title">Student Login</h2>
+                    <p class="page-subtitle" id="loginHint">Use your roll number and password to continue to the student dashboard.</p>
+                </div>
 
-    <button onclick="loginUser()">Login</button>
+                <div class="role-buttons">
+                    <button id="studentRole" class="active" onclick="setRole('student')">Student</button>
+                    <button id="staffRole" onclick="setRole('staff')">Staff</button>
+                </div>
 
-    <p>Don't have an account?
-    <a href="{% url 'signin_page' %}">
-        <button type="button">Sign Up</button>
-    </a>
-    </p>
-</div>
+                <div class="form-stack">
+                    <div class="field">
+                        <label for="username">User ID</label>
+                        <input id="username" placeholder="Enter Roll Number">
+                    </div>
+
+                    <div class="field">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" placeholder="Enter Password">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button onclick="loginUser()">Continue to Dashboard</button>
+                    <a class="btn secondary inline" href="{% url 'signin_page' %}">Create Student Account</a>
+                </div>
+            </div>
+        </section>
+    </section>
+</main>
 
 <script>
 let currentRole = "student";
 
-function setRole(role){
+function setRole(role) {
     currentRole = role;
-    if(role === "staff"){
-        document.getElementById("title").innerText = "Staff Login";
-        document.getElementById("username").placeholder = "Enter Employee ID";
+    const studentRole = document.getElementById("studentRole");
+    const staffRole = document.getElementById("staffRole");
+    const title = document.getElementById("title");
+    const username = document.getElementById("username");
+    const loginHint = document.getElementById("loginHint");
+
+    studentRole.classList.toggle("active", role === "student");
+    staffRole.classList.toggle("active", role === "staff");
+
+    if (role === "staff") {
+        title.innerText = "Staff Login";
+        username.placeholder = "Enter Employee ID";
+        loginHint.innerText = "Use your employee ID and password to access the staff operations dashboard.";
     } else {
-        document.getElementById("title").innerText = "Student Login";
-        document.getElementById("username").placeholder = "Enter Roll Number";
+        title.innerText = "Student Login";
+        username.placeholder = "Enter Roll Number";
+        loginHint.innerText = "Use your roll number and password to continue to the student dashboard.";
     }
 }
 
-function loginUser(){
+function loginUser() {
     let username = document.getElementById("username").value;
     let password = document.getElementById("password").value;
 
-    if(!username || !password){
+    if (!username || !password) {
         alert("Please enter both your ID and password.");
         return;
     }
 
-    if(currentRole === "student"){
-        // Student Roll Numbers are strings (e.g., "21BCE001")
-        fetch("{% url 'login' %}",{
-            method:"POST",
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ roll: username, pswd: password })
+    if (currentRole === "student") {
+        fetch("{% url 'login' %}", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ roll: username, pswd: password })
         })
-        .then(res => {
-            if(!res.ok) throw new Error("Server Error");
+        .then((res) => {
+            if (!res.ok) throw new Error("Server Error");
             return res.json();
         })
-        .then(data=>{
-            if(data.success){
+        .then((data) => {
+            if (data.success) {
                 sessionStorage.setItem("roll", username);
                 sessionStorage.setItem("role", "student");
-                window.location = "{% url 'student_page' %}"; 
+                window.location = "{% url 'student_page' %}";
             } else {
                 alert("Invalid Student Credentials");
             }
         })
-        .catch(err => {
+        .catch((err) => {
             console.error("Error:", err);
             alert("Could not connect to the server.");
         });
-
     } else {
-        // Staff Employee IDs are integers in your database
         let empIdInt = parseInt(username);
-        
-        if(isNaN(empIdInt)){
+
+        if (isNaN(empIdInt)) {
             alert("Employee ID must be a number.");
             return;
         }
 
-        fetch("{% url 'staff_login' %}",{
-            method:"POST",
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ emp_id: empIdInt, pswd: password })
+        fetch("{% url 'staff_login' %}", {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ emp_id: empIdInt, pswd: password })
         })
-        .then(res => {
-            if(!res.ok) throw new Error("Server Error");
+        .then((res) => {
+            if (!res.ok) throw new Error("Server Error");
             return res.json();
         })
-        .then(data=>{
-            if(data.success){
+        .then((data) => {
+            if (data.success) {
                 sessionStorage.setItem("emp_id", username);
                 sessionStorage.setItem("role", "staff");
-                window.location = "{% url 'staff_page' %}"; 
+                window.location = "{% url 'staff_page' %}";
             } else {
                 alert("Invalid Staff Credentials");
             }
         })
-        .catch(err => {
+        .catch((err) => {
             console.error("Error:", err);
             alert("Could not connect to the server.");
         });
     }
 }
 </script>
-
 </body>
 </html>
