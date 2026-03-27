@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Complaint</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
 </head>
 <body>
         
@@ -16,12 +16,20 @@
     <textarea id="desc" placeholder="Description"></textarea>
     
     <select id="category">
-        <option>Electrical</option>
-        <option>Water</option>
-        <option>Furniture</option>
-        <option>Civil</option>
-        <option>Network</option>
-        <option>Sanitation</option>
+        <option value="" disabled selected>Select Category</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Water">Water</option>
+        <option value="Furniture">Furniture</option>
+        <option value="Civil">Civil</option>
+        <option value="Network">Network</option>
+        <option value="Sanitation">Sanitation</option>
+    </select>
+
+    <select id="hostel">
+        <option value="" disabled selected>Select Your Hostel</option>
+        <option value="1">Hostel A</option>
+        <option value="2">Hostel B</option>
+        <option value="3">Hostel C</option>
     </select>
     
     <input type="file" id="photo">
@@ -31,7 +39,6 @@
 
 <script>
 function addComplaint(){
-    // 1. Check if the user is actually logged in
     let rollNumber = sessionStorage.getItem("roll");
     if(!rollNumber){
         alert("You must be logged in to register a complaint.");
@@ -39,15 +46,25 @@ function addComplaint(){
         return;
     }
 
-    // 2. Safe fetch with proper error catching
+    let title = document.getElementById("title").value;
+    let desc = document.getElementById("desc").value;
+    let category = document.getElementById("category").value;
+    let hostelId = parseInt(document.getElementById("hostel").value);
+
+    if(!title || !desc || !category || isNaN(hostelId)){
+        alert("Please fill in all fields and select a hostel.");
+        return;
+    }
+
     fetch("{% url 'register_complaint' %}",{
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
             roll: rollNumber,
-            title: document.getElementById("title").value,
-            description: document.getElementById("desc").value,
-            category: document.getElementById("category").value
+            title: title,
+            description: desc,
+            category: category,
+            hostel_id: hostelId
         })
     })
     .then(response => {
@@ -56,21 +73,18 @@ function addComplaint(){
     })
     .then(d => {
         if(d.success){
+            // Save the ID in session storage to use on the next page
             sessionStorage.setItem("complaint_id", d.complaint_id);
-            // Replaces the form with a success message
-            document.querySelector(".container").innerHTML = `
-                <h2>Complaint Registered Successfully ✅</h2>
-                <p>Your Complaint ID is:</p>
-                <h1>${d.complaint_id}</h1>
-                <button onclick="window.location='{% url 'student_page' %}'">Go to Dashboard</button>
-            `;
+            
+            // Redirect to the dedicated success page!
+            window.location = "{% url 'complaint_success' %}"; 
         } else {
-            alert("Failed to register complaint. Please check your details.");
+            alert("Failed to register complaint. " + (d.error || ""));
         }
     })
     .catch(error => {
         console.error("Error:", error);
-        alert("An error occurred. Make sure the category matches your database exactly!");
+        alert("An error occurred. Make sure your category exactly matches the database!");
     });
 }
 </script>

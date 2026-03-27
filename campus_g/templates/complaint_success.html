@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint Success</title>
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
+</head>
+<body>
+
+<div class="container">
+    <h2>Complaint Registered Successfully ✅</h2>
+    
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #ddd; text-align: center;">
+        <p style="margin: 5px 0; color: #555;">Your Complaint ID is:</p>
+        <h1 id="cid" style="margin: 10px 0; color: #0056b3; font-size: 2.5em;"></h1>
+        <hr style="border-top: 1px dashed #ccc; margin: 15px 0;">
+        <p style="margin: 5px 0;"><strong>Date:</strong> <span id="cdate"></span></p>
+        <p style="margin: 5px 0;"><strong>Time:</strong> <span id="ctime"></span></p>
+    </div>
+
+    <button onclick="window.location='{% url 'student_page' %}'">Go to Dashboard</button>
+</div>
+
+<script>
+    // 1. Get the Complaint ID from the previous page
+    let complaintId = sessionStorage.getItem("complaint_id");
+    document.getElementById("cid").innerText = "#" + (complaintId || "ERROR");
+
+    // 2. Generate the current Date and Time
+    let now = new Date();
+    document.getElementById("cdate").innerText = now.toLocaleDateString();
+    document.getElementById("ctime").innerText = now.toLocaleTimeString();
+</script>
+
+</body>
+</html>

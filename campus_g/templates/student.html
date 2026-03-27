@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-   <link rel="stylesheet" href="{% static 'index.css' %}">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
 </head>
 <body>
         
-<div class="container">
+<div class="container" style="max-width: 800px;">
     <h2>Student Dashboard</h2>
     <input id="search" placeholder="Enter Complaint ID">
     <button onclick="searchComplaint()">Check Status</button>
@@ -17,7 +17,7 @@
     <button onclick="location='{% url 'complaint_page' %}'">Register New Complaint</button>
 </div>
 
-<div class="my_complaints">
+<div class="my_complaints" style="max-width: 800px; margin: auto;">
     <div class="box solved">
         <button onclick="viewComplaints('Solved')">Solved</button>
     </div>
@@ -29,52 +29,36 @@
     </div>
 </div>
 
-<div id="staffBox">
-    complaints are to be displayed here.
+<div id="staffBox" style="max-width: 800px; margin: 20px auto;">
+    <p>Select a status above to view your complaints.</p>
 </div>
 
 <script>
-function searchComplaint(){
-    let cid = document.getElementById("search").value;
-
-    if(cid === ""){
-        alert("Please enter Complaint ID");
-        return;
-    }
-
-    // SAFE FETCH: No Django tags here, just pure JavaScript template literals
-    fetch(`/search_complaint/${cid}/`)
-    .then(response => {
-        if(!response.ok) throw new Error("Server Error");
-        return response.json();
-    })
-    .then(data => {
-        if(data.found){
-            alert("Complaint Status: " + data.status);
-        }else{
-            alert("Complaint Not Found");
-        }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        alert("Server Error");
-    });
-}
-
+// --- 1. Renders the basic summary list ---
 function viewComplaints(status){
     let box = document.getElementById("staffBox");
+    
     if(status === "Solved"){
-        box.innerHTML = "<h3>Solved Complaints</h3>";
+        box.innerHTML = "<h3>✅ Solved Complaints</h3>";
     } else if(status === "In Progress"){
-        box.innerHTML = "<h3>In Progress Complaints</h3>";
+        box.innerHTML = "<h3>⏳ In Progress Complaints</h3>";
     } else {
-        box.innerHTML = "<h3>Pending Complaints</h3>";
+        box.innerHTML = "<h3>📋 Pending Complaints</h3>";
     }
     
     let sid = sessionStorage.getItem("roll");
     
-    // SAFE FETCH: No Django tags here either!
-    fetch(`/student_complaints/${sid}/${status}/`)
+    if(!sid){
+        alert("Please login first.");
+        window.location = "{% url 'login_page' %}";
+        return;
+    }
+
+    const complaintsUrl = "{% url 'student_complaints' 'roll-placeholder' 'status-placeholder' %}"
+        .replace("roll-placeholder", sid)
+        .replace("status-placeholder", encodeURIComponent(status));
+        
+    fetch(complaintsUrl)
     .then(response => {
         if(!response.ok) throw new Error("Server Error");
         return response.json();
@@ -85,19 +69,83 @@ function viewComplaints(status){
             return;
         }
 
+        // Generate clean summary cards
         data.forEach(c => {
             box.innerHTML += `
-            <div class="block">
-                 <h3>ID: ${c.id}</h3>
-                 <h3>TITLE: ${c.title}</h3>
-                 <p>Status: ${c.status}</p>
+            <div class="block" style="border: 1px solid #ccc; padding: 15px; margin-top: 10px; border-radius: 8px;">
+                 <h4 style="margin: 0; color: #333;">Complaint #${c.id}</h4>
+                 <h3 style="margin: 5px 0; color: #0056b3;">${c.title}</h3>
+                 <p style="margin: 2px 0;"><strong>Category:</strong> ${c.category_name || "General"}</p>
+                 <p style="margin: 2px 0;"><strong>Status:</strong> ${c.status}</p>
+                 
+                 <button style="margin-top: 15px; background: #007bff; width: 100%; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer;" onclick="showDetails(${c.id})">
+                    🔍 View Full Details
+                </button>
             </div>`;
         });
     })
     .catch(error => {
         console.error("Error:", error);
-        box.innerHTML += `<p>Error loading complaints.</p>`;
+        box.innerHTML += `<p style="color:red;">Error loading complaints from database.</p>`;
     });
+}
+
+// --- 2. Fetches and displays the Rich Details View (No Staff Actions/Workers) ---
+function showDetails(cid) {
+    let box = document.getElementById("staffBox");
+    box.innerHTML = `<p>Loading detailed information...</p>`;
+
+    const url = "{% url 'complaint_details' 0 %}".replace("/0/", `/${cid}/`);
+
+    fetch(url)
+    .then(res => res.json())
+    .then(data => {
+        if(!data.success) {
+            box.innerHTML = `<p style="color:red;">Error loading details.</p>`;
+            return;
+        }
+
+        // Build the student-friendly rich-detail UI
+        let html = `
+        <div style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top:15px; text-align: left;">
+            <button onclick="viewComplaints('${data.status}')" style="margin-bottom: 15px; background: #6c757d; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer;">⬅ Back to List</button>
+
+            <h2 style="color: #0056b3; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                #${data.id} - ${data.title}
+            </h2>
+            
+            <p style="font-size: 1.1em; line-height: 1.5; background: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #0056b3;">
+                <strong>Description:</strong><br>${data.description}
+            </p>
+            
+            <div style="margin: 20px 0; padding: 15px; background: #e9ecef; border-radius: 5px;">
+                <h4 style="margin-top: 0; color: #333;">Timeline & Details</h4>
+                <p style="margin: 5px 0;"><strong>Category:</strong> ${data.category}</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> <span style="font-weight: bold; color: ${data.status === 'Solved' ? '#28a745' : '#ffc107'};">${data.status}</span></p>
+                <p style="margin: 5px 0;"><strong>Filed On:</strong> ${data.created_date}</p>
+                ${data.status === 'Solved' ? `<p style="margin: 5px 0; color: #28a745;"><strong>✅ Solved On:</strong> ${data.solved_date}</p>` : ''}
+            </div>
+            
+            <p style="color: gray; font-size: 0.9em; text-align: center; margin-top: 20px;">
+                <em>Your assigned warden is monitoring this issue.</em>
+            </p>
+        </div>`;
+        
+        box.innerHTML = html;
+    });
+}
+
+// --- 3. Search Bar Logic ---
+function searchComplaint(){
+    let cid = document.getElementById("search").value;
+
+    if(cid === ""){
+        alert("Please enter Complaint ID");
+        return;
+    }
+
+    // Instead of an alert, we can directly push them into the beautiful details view!
+    showDetails(cid);
 }
 </script>
 

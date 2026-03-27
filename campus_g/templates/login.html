@@ -1,54 +1,3 @@
-<!----
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="index.css">
-
-</head>
-<body>
-        
-
-<div class="container">
-
-<h3>Login</h3>
-
-<button onclick="setRole('student')">Student</button>
-<button onclick="setRole('staff')">Staff</button>
-
-<input id="email" placeholder="Enter Student Username">
-<input type="password" id="password" placeholder="Password">
-
-<button onclick="login()">Login</button>
-
-</div>
-<script>
-function login(){
-fetch("http://127.0.0.1:8000/login/",{
- method:"POST",
- headers:{'Content-Type':'application/json'},
- body:JSON.stringify({
-  roll: email.value,
-  pswd: document.querySelector("input[type=password]").value
- })
-}).then(r=>r.json())
-.then(d=>{
- if(d.success){
-   sessionStorage.setItem("roll",email.value);
-   location="student.html";
- }
- else alert("Invalid Credentials");
-});
-}
-</script>
-
-
-
-</body>
-</html>
--->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -56,126 +5,35 @@ fetch("http://127.0.0.1:8000/login/",{
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login</title>
-<link rel="stylesheet" href="{% static 'index.css' %}">
+<link rel="stylesheet" href="{% static 'index.css' %}?v=native_olive">
 </head>
-
 <body>
 
 <div class="container">
+    <h2 id="title">Student Login</h2>
+    
+    <div class="role-buttons">
+        <button onclick="setRole('student')">Student</button>
+        <button onclick="setRole('staff')">Staff</button>
+    </div>
 
-<h2 id="title">Student Login</h2>
+    <input id="username" placeholder="Enter Roll Number">
+    <input type="password" id="password" placeholder="Password">
 
-<div class="role-buttons">
-    <button onclick="setRole('student')">Student</button>
-    <button onclick="setRole('staff')">Staff</button>
+    <button onclick="loginUser()">Login</button>
+
+    <p>Don't have an account?
+    <a href="{% url 'signin_page' %}">
+        <button type="button">Sign Up</button>
+    </a>
+    </p>
 </div>
 
-<input id="username" placeholder="Enter Roll Number">
-<input type="password" id="password" placeholder="Password">
-
-<button onclick="loginUser()">Login</button>
-
-<p>Don't have an account?
-<a href="{% url 'signin_page' %}">
-    <button type="button">Sign Up</button>
-</a>
-</p>
-
-</div>
-<!---
-<script>
-
-let currentRole = "student";
-
-function setRole(role){
-    currentRole = role;
-
-    if(role === "staff"){
-        document.getElementById("title").innerText = "Staff Login";
-        document.getElementById("username").placeholder = "Enter Employee ID";
-    } else {
-        document.getElementById("title").innerText = "Student Login";
-        document.getElementById("username").placeholder = "Enter Roll Number";
-    }
-}
-
-function loginUser(){
-
-let username = document.getElementById("username").value;
-let password = document.getElementById("password").value;
-
-if(currentRole === "student"){
-
-    fetch("http://127.0.0.1:8000/login",{
-        method:"POST",
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-            roll: username,
-            pswd: password
-        })
-    })
-    .then(res => {
-        if(!res.ok){
-            throw new Error("Server Error: " + res.status);
-        }
-        return res.json();
-    })
-    .then(data=>{
-        if(data.success){
-            sessionStorage.setItem("roll", username);
-            sessionStorage.setItem("role", "student");
-            window.location="student.html";
-        } else {
-            alert("Invalid Student Credentials");
-        }
-    })
-    .catch(err=>{
-        console.error(err);
-        alert("Login failed");
-    });
-
-}else{
-
-    fetch("http://127.0.0.1:8000/staff_login/",{
-        method:"POST",
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-            emp_id: username,
-            pswd: password
-        })
-    })
-    .then(res => {
-        if(!res.ok){
-            throw new Error("Server Error: " + res.status);
-        }
-        return res.json();
-    })
-    .then(data=>{
-        if(data.success){
-            sessionStorage.setItem("emp_id", username);
-            sessionStorage.setItem("role", "staff");
-            window.location="staff.html";
-        } else {
-            alert("Invalid Staff Credentials");
-        }
-    })
-    .catch(err=>{
-        console.error(err);
-        alert("Login failed");
-    });
-
-}
-
-}
-
-</script>
---->
 <script>
 let currentRole = "student";
 
 function setRole(role){
     currentRole = role;
-
     if(role === "staff"){
         document.getElementById("title").innerText = "Staff Login";
         document.getElementById("username").placeholder = "Enter Employee ID";
@@ -189,66 +47,70 @@ function loginUser(){
     let username = document.getElementById("username").value;
     let password = document.getElementById("password").value;
 
+    if(!username || !password){
+        alert("Please enter both your ID and password.");
+        return;
+    }
+
     if(currentRole === "student"){
-        // Using Django url tag for the API endpoint
+        // Student Roll Numbers are strings (e.g., "21BCE001")
         fetch("{% url 'login' %}",{
             method:"POST",
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                roll: username,
-                pswd: password
-            })
+            body:JSON.stringify({ roll: username, pswd: password })
         })
         .then(res => {
-            if(!res.ok) throw new Error("Server Error: " + res.status);
+            if(!res.ok) throw new Error("Server Error");
             return res.json();
         })
         .then(data=>{
             if(data.success){
                 sessionStorage.setItem("roll", username);
                 sessionStorage.setItem("role", "student");
-                // Using Django url tag to redirect to the student dashboard
-                window.location = "{% url 'student_page' %}";
+                window.location = "{% url 'student_page' %}"; 
             } else {
                 alert("Invalid Student Credentials");
             }
         })
-        .catch(err=>{
-            console.error(err);
-            alert("Login failed");
+        .catch(err => {
+            console.error("Error:", err);
+            alert("Could not connect to the server.");
         });
 
-    }else{
-        // Using Django url tag for the staff API endpoint
+    } else {
+        // Staff Employee IDs are integers in your database
+        let empIdInt = parseInt(username);
+        
+        if(isNaN(empIdInt)){
+            alert("Employee ID must be a number.");
+            return;
+        }
+
         fetch("{% url 'staff_login' %}",{
             method:"POST",
             headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({
-                emp_id: username,
-                pswd: password
-            })
+            body:JSON.stringify({ emp_id: empIdInt, pswd: password })
         })
         .then(res => {
-            if(!res.ok) throw new Error("Server Error: " + res.status);
+            if(!res.ok) throw new Error("Server Error");
             return res.json();
         })
         .then(data=>{
             if(data.success){
                 sessionStorage.setItem("emp_id", username);
                 sessionStorage.setItem("role", "staff");
-                // Using Django url tag to redirect to the staff dashboard
-                window.location = "{% url 'staff_page' %}";
+                window.location = "{% url 'staff_page' %}"; 
             } else {
                 alert("Invalid Staff Credentials");
             }
         })
-        .catch(err=>{
-            console.error(err);
-            alert("Login failed");
+        .catch(err => {
+            console.error("Error:", err);
+            alert("Could not connect to the server.");
         });
     }
 }
 </script>
+
 </body>
 </html>
-
