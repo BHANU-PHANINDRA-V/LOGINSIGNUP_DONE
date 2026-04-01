@@ -10,6 +10,10 @@
 <body>
 <main class="page-shell">
     <section class="container wide">
+        <div class="profile-corner">
+            <button class="secondary inline profile-trigger" type="button" onclick="toggleProfilePanel()">Profile</button>
+        </div>
+
         <div class="dashboard-header">
             <div>
                 <span class="eyebrow">Staff Operations</span>
@@ -23,6 +27,44 @@
                 <span class="tag">Staff workspace</span>
                 <span class="tag">Operational control</span>
             </div>
+        </div>
+
+        <div id="profilePanel" class="profile-panel hidden">
+            <div class="results-head">
+                <div>
+                    <p class="results-title">Staff Profile</p>
+                    <p class="results-subtitle">View your staff details and update your password without leaving the dashboard.</p>
+                </div>
+                <button class="ghost inline" type="button" onclick="toggleProfilePanel(false)">Close</button>
+            </div>
+
+            <div id="staffProfileContent" class="info-list"></div>
+
+            <section class="detail-panel">
+                <p class="panel-title">Change Password</p>
+                <p class="panel-copy">Use your current password and save a new one for future staff logins.</p>
+
+                <div class="form-stack profile-form">
+                    <div class="field">
+                        <label for="staff_current_pswd">Current Password</label>
+                        <input type="password" id="staff_current_pswd" placeholder="Enter current password">
+                    </div>
+
+                    <div class="field">
+                        <label for="staff_new_pswd">New Password</label>
+                        <input type="password" id="staff_new_pswd" placeholder="Enter new password">
+                    </div>
+
+                    <div class="field">
+                        <label for="staff_confirm_pswd">Confirm Password</label>
+                        <input type="password" id="staff_confirm_pswd" placeholder="Confirm new password">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="inline" type="button" onclick="changeStaffPassword()">Update Password</button>
+                </div>
+            </section>
         </div>
 
         <div class="toolbar-panel">
@@ -409,6 +451,109 @@ function searchComplaint() {
                 alert("Complaint Not Found");
             }
         });
+}
+
+function toggleProfilePanel(forceState) {
+    const panel = document.getElementById("profilePanel");
+    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.classList.contains("hidden");
+
+    panel.classList.toggle("hidden", !shouldOpen);
+
+    if (shouldOpen) {
+        loadStaffProfile();
+    }
+}
+
+function loadStaffProfile() {
+    const content = document.getElementById("staffProfileContent");
+    content.innerHTML = emptyState("Loading profile", "Fetching your staff account details.");
+
+    const url = "{% url 'staff_profile' 0 %}".replace("/0/", `/${empId}/`);
+
+    fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                content.innerHTML = emptyState("Unable to load profile", data.error || "Profile information is unavailable right now.");
+                return;
+            }
+
+            content.innerHTML = `
+                <div>
+                    <span class="info-label">Name</span>
+                    <span class="info-value">${data.name}</span>
+                </div>
+                <div>
+                    <span class="info-label">Employee ID</span>
+                    <span class="info-value">${data.emp_id}</span>
+                </div>
+                <div>
+                    <span class="info-label">Designation</span>
+                    <span class="info-value">${data.designation}</span>
+                </div>
+                <div>
+                    <span class="info-label">Email</span>
+                    <span class="info-value">${data.mail}</span>
+                </div>
+                <div>
+                    <span class="info-label">Mobile</span>
+                    <span class="info-value">${data.mobile}</span>
+                </div>
+                <div>
+                    <span class="info-label">Hostel Access</span>
+                    <span class="info-value">${data.hostel}</span>
+                </div>
+                <div>
+                    <span class="info-label">Account Status</span>
+                    <span class="info-value">${data.staff_status}</span>
+                </div>
+            `;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            content.innerHTML = emptyState("Unable to load profile", "Please try again after the connection recovers.");
+        });
+}
+
+function changeStaffPassword() {
+    const currentPassword = document.getElementById("staff_current_pswd").value;
+    const newPassword = document.getElementById("staff_new_pswd").value;
+    const confirmPassword = document.getElementById("staff_confirm_pswd").value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        alert("Please fill in all password fields.");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert("New passwords do not match.");
+        return;
+    }
+
+    fetch("{% url 'update_password' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            emp_id: empId,
+            current_pswd: currentPassword,
+            new_pswd: newPassword
+        })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.success) {
+            alert("Password updated successfully.");
+            document.getElementById("staff_current_pswd").value = "";
+            document.getElementById("staff_new_pswd").value = "";
+            document.getElementById("staff_confirm_pswd").value = "";
+        } else {
+            alert("Error updating password: " + data.error);
+        }
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        alert("Could not update password right now.");
+    });
 }
 </script>
 </body>

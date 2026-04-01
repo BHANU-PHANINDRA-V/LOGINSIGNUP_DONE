@@ -17,6 +17,8 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('staff_login/', views.staff_login, name='staff_login'),
     path('update_password/', views.update_password, name='update_password'),
+    path('student_profile/<str:roll>/', views.student_profile, name='student_profile'),
+    path('staff_profile/<int:emp_id>/', views.staff_profile, name='staff_profile'),
     
     path('register_complaint/', views.register_complaint, name='register_complaint'),
     path('search_complaint/<int:cid>/', views.search_complaint, name='search_complaint'),

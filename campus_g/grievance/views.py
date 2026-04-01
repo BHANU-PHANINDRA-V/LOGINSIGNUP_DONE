@@ -68,13 +68,74 @@ def update_password(request):
     if request.method == "POST":
         data = json.loads(request.body)
         try:
-            staff = Staff.objects.get(emp_id=data["emp_id"])
-            staff.pswd = data["new_pswd"]
-            staff.first_login = False 
-            staff.save()
-            return JsonResponse({"success": True})
+            new_password = data.get("new_pswd")
+            current_password = data.get("current_pswd")
+
+            if not new_password:
+                return JsonResponse({"success": False, "error": "New password is required."})
+
+            if data.get("emp_id") is not None:
+                staff = Staff.objects.get(emp_id=data["emp_id"])
+
+                if current_password and staff.pswd != current_password:
+                    return JsonResponse({"success": False, "error": "Current password is incorrect."})
+
+                staff.pswd = new_password
+                staff.first_login = False
+                staff.save()
+                return JsonResponse({"success": True})
+
+            if data.get("roll"):
+                student = Student.objects.get(roll=data["roll"])
+
+                if current_password and student.pswd != current_password:
+                    return JsonResponse({"success": False, "error": "Current password is incorrect."})
+
+                student.pswd = new_password
+                student.save()
+                return JsonResponse({"success": True})
+
+            return JsonResponse({"success": False, "error": "User identifier is required."})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Invalid request method."}, status=405)
+
+@csrf_exempt
+def student_profile(request, roll):
+    try:
+        student = Student.objects.select_related("hostel_id").get(roll=roll)
+        data = {
+            "success": True,
+            "role": "Student",
+            "roll": student.roll,
+            "name": student.name,
+            "mail": student.mail,
+            "mobile": student.mobile,
+            "hostel": student.hostel_id.name if student.hostel_id else "Not Assigned",
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+@csrf_exempt
+def staff_profile(request, emp_id):
+    try:
+        staff = Staff.objects.select_related("desig_id", "hostel_id", "staff_status_id").get(emp_id=emp_id)
+        data = {
+            "success": True,
+            "role": "Staff",
+            "emp_id": staff.emp_id,
+            "name": staff.name,
+            "mail": staff.mail,
+            "mobile": staff.mobile,
+            "designation": staff.desig_id.desig_name if staff.desig_id else "Not Assigned",
+            "hostel": staff.hostel_id.name if staff.hostel_id else "All Hostels",
+            "staff_status": staff.staff_status_id.status_name if staff.staff_status_id else "Unknown",
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 
 # --- COMPLAINT APIS ---

@@ -10,6 +10,10 @@
 <body>
 <main class="page-shell">
     <section class="container wide">
+        <div class="profile-corner">
+            <button class="secondary inline profile-trigger" type="button" onclick="toggleProfilePanel()">Profile</button>
+        </div>
+
         <div class="dashboard-header">
             <div>
                 <span class="eyebrow">Student Workspace</span>
@@ -23,6 +27,44 @@
                 <span class="tag">Live tracking</span>
                 <span class="tag">Student view</span>
             </div>
+        </div>
+
+        <div id="profilePanel" class="profile-panel hidden">
+            <div class="results-head">
+                <div>
+                    <p class="results-title">Student Profile</p>
+                    <p class="results-subtitle">View your account details and update your password from one place.</p>
+                </div>
+                <button class="ghost inline" type="button" onclick="toggleProfilePanel(false)">Close</button>
+            </div>
+
+            <div id="studentProfileContent" class="info-list"></div>
+
+            <section class="detail-panel">
+                <p class="panel-title">Change Password</p>
+                <p class="panel-copy">Enter your current password and choose a new one for your student account.</p>
+
+                <div class="form-stack profile-form">
+                    <div class="field">
+                        <label for="student_current_pswd">Current Password</label>
+                        <input type="password" id="student_current_pswd" placeholder="Enter current password">
+                    </div>
+
+                    <div class="field">
+                        <label for="student_new_pswd">New Password</label>
+                        <input type="password" id="student_new_pswd" placeholder="Enter new password">
+                    </div>
+
+                    <div class="field">
+                        <label for="student_confirm_pswd">Confirm Password</label>
+                        <input type="password" id="student_confirm_pswd" placeholder="Confirm new password">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button class="inline" type="button" onclick="changeStudentPassword()">Update Password</button>
+                </div>
+            </section>
         </div>
 
         <div class="toolbar-panel">
@@ -72,6 +114,13 @@
 </main>
 
 <script>
+const studentRoll = sessionStorage.getItem("roll");
+
+if (!studentRoll) {
+    alert("Please login first.");
+    window.location = "{% url 'login_page' %}";
+}
+
 function statusClass(status) {
     if (status === "Solved") return "status-solved";
     if (status === "In Progress") return "status-progress";
@@ -276,6 +325,101 @@ function searchComplaint() {
     }
 
     showDetails(cid);
+}
+
+function toggleProfilePanel(forceState) {
+    const panel = document.getElementById("profilePanel");
+    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.classList.contains("hidden");
+
+    panel.classList.toggle("hidden", !shouldOpen);
+
+    if (shouldOpen) {
+        loadStudentProfile();
+    }
+}
+
+function loadStudentProfile() {
+    const content = document.getElementById("studentProfileContent");
+    content.innerHTML = emptyState("Loading profile", "Fetching your student account details.");
+
+    const url = "{% url 'student_profile' 'roll-placeholder' %}".replace("roll-placeholder", encodeURIComponent(studentRoll));
+
+    fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                content.innerHTML = emptyState("Unable to load profile", data.error || "Profile information is unavailable right now.");
+                return;
+            }
+
+            content.innerHTML = `
+                <div>
+                    <span class="info-label">Name</span>
+                    <span class="info-value">${data.name}</span>
+                </div>
+                <div>
+                    <span class="info-label">Roll Number</span>
+                    <span class="info-value">${data.roll}</span>
+                </div>
+                <div>
+                    <span class="info-label">Email</span>
+                    <span class="info-value">${data.mail}</span>
+                </div>
+                <div>
+                    <span class="info-label">Mobile</span>
+                    <span class="info-value">${data.mobile}</span>
+                </div>
+                <div>
+                    <span class="info-label">Hostel</span>
+                    <span class="info-value">${data.hostel}</span>
+                </div>
+            `;
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            content.innerHTML = emptyState("Unable to load profile", "Please try again after the connection recovers.");
+        });
+}
+
+function changeStudentPassword() {
+    const currentPassword = document.getElementById("student_current_pswd").value;
+    const newPassword = document.getElementById("student_new_pswd").value;
+    const confirmPassword = document.getElementById("student_confirm_pswd").value;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        alert("Please fill in all password fields.");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert("New passwords do not match.");
+        return;
+    }
+
+    fetch("{% url 'update_password' %}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            roll: studentRoll,
+            current_pswd: currentPassword,
+            new_pswd: newPassword
+        })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.success) {
+            alert("Password updated successfully.");
+            document.getElementById("student_current_pswd").value = "";
+            document.getElementById("student_new_pswd").value = "";
+            document.getElementById("student_confirm_pswd").value = "";
+        } else {
+            alert("Error updating password: " + data.error);
+        }
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        alert("Could not update password right now.");
+    });
 }
 </script>
 </body>
