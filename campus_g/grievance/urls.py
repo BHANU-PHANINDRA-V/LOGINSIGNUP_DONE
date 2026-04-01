@@ -28,6 +28,7 @@ urlpatterns = [
     path('staff_complaints/<int:emp_id>/', views.staff_complaints, name='staff_complaints'),
     path('complaint_details/<int:cid>/', views.complaint_details, name='complaint_details'),
     path('update_status/', views.update_status, name='update_status'),
+    path('chief_warden_stats/<int:emp_id>/', views.chief_warden_monthly_stats, name='chief_warden_monthly_stats'),
     path('complaint_stats/', views.complaint_stats, name='complaint_stats'),
     
     # NEW: Endpoint for Staff to add workers

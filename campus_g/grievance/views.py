@@ -3,12 +3,35 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
+from decimal import Decimal, InvalidOperation
 import json
 
 from .models import (
     Student, Staff, Complaint, Category, 
     Hostel, Status, Designation, StaffStatus, TechnicalWorker
 )
+
+
+def serialize_cost(value):
+    if value is None:
+        return None
+
+    return float(Decimal(value).quantize(Decimal("0.01")))
+
+
+def parse_resolution_cost(raw_value):
+    if raw_value in (None, ""):
+        raise ValueError("Cost is required when marking a complaint as solved.")
+
+    try:
+        cost = Decimal(str(raw_value)).quantize(Decimal("0.01"))
+    except (InvalidOperation, TypeError, ValueError):
+        raise ValueError("Cost must be a valid number.")
+
+    if cost < 0:
+        raise ValueError("Cost cannot be negative.")
+
+    return cost
 
 # --- REGISTRATION & LOGIN APIS ---
 @csrf_exempt
@@ -200,9 +223,19 @@ def student_complaints(request, roll, status):
     try:
         student = Student.objects.get(roll=roll)
         status_obj = Status.objects.get(status_name=status)
-        complaints = Complaint.objects.filter(student_id=student, status_id=status_obj).order_by('-created_date')
+        complaints = Complaint.objects.select_related("status_id", "cat_id").filter(
+            student_id=student,
+            status_id=status_obj,
+        ).order_by('-created_date')
 
-        data = [{"id": c.Complaint_id, "title": c.title, "status": c.status_id.status_name, "category_name": c.cat_id.cat_name, "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A"} for c in complaints]
+        data = [{
+            "id": c.Complaint_id,
+            "title": c.title,
+            "status": c.status_id.status_name,
+            "category_name": c.cat_id.cat_name,
+            "cost": serialize_cost(c.cost),
+            "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A",
+        } for c in complaints]
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
@@ -212,11 +245,20 @@ def staff_complaints(request, emp_id):
     try:
         staff = Staff.objects.get(emp_id=emp_id)
         if staff.hostel_id:
-            complaints = Complaint.objects.filter(hostel_id=staff.hostel_id).order_by('-created_date')
+            complaints = Complaint.objects.select_related("status_id", "cat_id").filter(
+                hostel_id=staff.hostel_id
+            ).order_by('-created_date')
         else:
-            complaints = Complaint.objects.all().order_by('-created_date')
+            complaints = Complaint.objects.select_related("status_id", "cat_id").all().order_by('-created_date')
 
-        data = [{"id": c.Complaint_id, "title": c.title, "status": c.status_id.status_name, "category_name": c.cat_id.cat_name, "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A"} for c in complaints]
+        data = [{
+            "id": c.Complaint_id,
+            "title": c.title,
+            "status": c.status_id.status_name,
+            "category_name": c.cat_id.cat_name,
+            "cost": serialize_cost(c.cost),
+            "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A",
+        } for c in complaints]
         return JsonResponse(data, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400)
@@ -241,6 +283,7 @@ def complaint_details(request, cid):
             "description": c.description,
             "status": c.status_id.status_name,
             "category": c.cat_id.cat_name,
+            "cost": serialize_cost(c.cost),
             "created_date": c.created_date.strftime("%B %d, %Y - %I:%M %p") if c.created_date else "N/A",
             "solved_date": c.solved_date.strftime("%B %d, %Y - %I:%M %p") if c.solved_date else None,
             "solved_by_emp_id": c.solved_by.emp_id if c.solved_by else None,
@@ -256,27 +299,45 @@ def complaint_details(request, cid):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
-@csrf_exempt   
+@csrf_exempt
+@require_http_methods(["POST"])
 def update_status(request):
-    if request.method == "POST":
+    try:
         data = json.loads(request.body)
         complaint = Complaint.objects.get(Complaint_id=data["id"])
-        new_status, _ = Status.objects.get_or_create(status_name=data["status"])
-        
+        new_status_name = data.get("status")
+
+        if new_status_name not in {"Pending", "In Progress", "Solved"}:
+            return JsonResponse({"success": False, "error": "Invalid complaint status."}, status=400)
+
+        new_status, _ = Status.objects.get_or_create(status_name=new_status_name)
         complaint.status_id = new_status
-        if data["status"] == "Solved":
+
+        if new_status_name == "Solved":
+            complaint.cost = parse_resolution_cost(data.get("cost"))
             complaint.solved_date = timezone.now()
-            if "emp_id" in data:
+
+            if data.get("emp_id") is not None:
                 try:
                     staff = Staff.objects.get(emp_id=data["emp_id"])
                     complaint.solved_by = staff
-                except Exception: pass
+                except Staff.DoesNotExist:
+                    complaint.solved_by = None
         else:
+            complaint.cost = None
             complaint.solved_date = None
             complaint.solved_by = None
-            
+
         complaint.save()
-        return JsonResponse({"success": True})
+        return JsonResponse({"success": True, "cost": serialize_cost(complaint.cost)})
+    except Complaint.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Complaint not found."}, status=404)
+    except ValueError as error:
+        return JsonResponse({"success": False, "error": str(error)}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid request body."}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
 
 # --- NEW: ADD TECHNICAL WORKER API ---
 @csrf_exempt
@@ -300,6 +361,88 @@ def add_worker(request):
             return JsonResponse({"success": True})
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
+
+
+@csrf_exempt
+def chief_warden_monthly_stats(request, emp_id):
+    try:
+        staff = Staff.objects.select_related("desig_id").get(emp_id=emp_id)
+
+        if not staff.desig_id or staff.desig_id.desig_name != "Chief Warden":
+            return JsonResponse(
+                {"success": False, "error": "Only the chief warden can view these statistics."},
+                status=403,
+            )
+
+        hostels = list(Hostel.objects.order_by("name"))
+        complaints = Complaint.objects.select_related("hostel_id").order_by("-created_date")
+        monthly_stats = {}
+
+        for complaint in complaints:
+            month_key = complaint.created_date.strftime("%Y-%m")
+            month_label = complaint.created_date.strftime("%B %Y")
+
+            if month_key not in monthly_stats:
+                monthly_stats[month_key] = {
+                    "key": month_key,
+                    "label": month_label,
+                    "total_complaints": 0,
+                    "total_cost": Decimal("0.00"),
+                    "hostels": {
+                        hostel.hostel_id: {
+                            "hostel_id": hostel.hostel_id,
+                            "hostel_name": hostel.name,
+                            "complaint_count": 0,
+                            "total_cost": Decimal("0.00"),
+                        }
+                        for hostel in hostels
+                    },
+                }
+
+            month_bucket = monthly_stats[month_key]
+            complaint_cost = complaint.cost if complaint.cost is not None else Decimal("0.00")
+            hostel_bucket = month_bucket["hostels"][complaint.hostel_id.hostel_id]
+
+            month_bucket["total_complaints"] += 1
+            month_bucket["total_cost"] += complaint_cost
+
+            hostel_bucket["complaint_count"] += 1
+            hostel_bucket["total_cost"] += complaint_cost
+
+        months = []
+        for month_key in sorted(monthly_stats.keys(), reverse=True):
+            month_bucket = monthly_stats[month_key]
+            hostel_rows = []
+
+            for hostel in hostels:
+                hostel_bucket = month_bucket["hostels"][hostel.hostel_id]
+                hostel_rows.append({
+                    "hostel_id": hostel_bucket["hostel_id"],
+                    "hostel_name": hostel_bucket["hostel_name"],
+                    "complaint_count": hostel_bucket["complaint_count"],
+                    "total_cost": serialize_cost(hostel_bucket["total_cost"]),
+                })
+
+            months.append({
+                "key": month_bucket["key"],
+                "label": month_bucket["label"],
+                "total_complaints": month_bucket["total_complaints"],
+                "total_cost": serialize_cost(month_bucket["total_cost"]),
+                "active_hostels": sum(1 for hostel in hostel_rows if hostel["complaint_count"] > 0),
+                "hostels": hostel_rows,
+            })
+
+        return JsonResponse({
+            "success": True,
+            "months": months,
+            "default_month": months[0]["key"] if months else None,
+        })
+    except Staff.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Staff member not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
+
 @csrf_exempt
 def complaint_stats(request):
     total = Complaint.objects.count()

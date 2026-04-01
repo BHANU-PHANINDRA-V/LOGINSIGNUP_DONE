@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v3">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v4">
 </head>
 <body>
 <main class="page-shell">
@@ -140,7 +140,24 @@ function emptyState(title, copy) {
     `;
 }
 
+function formatCost(cost, emptyLabel = "Not recorded yet") {
+    if (cost === null || cost === undefined || cost === "") {
+        return emptyLabel;
+    }
+
+    const numericCost = Number(cost);
+    if (Number.isNaN(numericCost)) {
+        return emptyLabel;
+    }
+
+    return `Rs ${numericCost.toFixed(2)}`;
+}
+
 function renderComplaintCard(complaint) {
+    const costLabel = complaint.status === "Solved"
+        ? formatCost(complaint.cost)
+        : formatCost(complaint.cost, "Pending resolution");
+
     return `
         <article class="ticket-card">
             <div class="ticket-card-head">
@@ -159,6 +176,10 @@ function renderComplaintCard(complaint) {
                 <div class="meta-card">
                     <span class="meta-label">Current State</span>
                     <strong class="meta-value">${complaint.status}</strong>
+                </div>
+                <div class="meta-card">
+                    <span class="meta-label">Recorded Cost</span>
+                    <strong class="meta-value">${costLabel}</strong>
                 </div>
             </div>
 
@@ -234,6 +255,10 @@ function showDetails(cid) {
                 return;
             }
 
+            const costLabel = data.status === "Solved"
+                ? formatCost(data.cost)
+                : formatCost(data.cost, "Pending resolution");
+
             const solvedPanel = data.status === "Solved"
                 ? `
                     <div class="notice-card">
@@ -257,7 +282,7 @@ function showDetails(cid) {
                 : `
                     <div class="notice-card">
                         <p class="notice-title">Monitoring Note</p>
-                        <p class="notice-copy">Your assigned warden is tracking this issue and future status changes will appear here.</p>
+                        <p class="notice-copy">Your assigned warden is tracking this issue. The final cost will appear here once the complaint is resolved.</p>
                     </div>
                 `;
 
@@ -297,6 +322,10 @@ function showDetails(cid) {
                                     <span class="info-label">Filed On</span>
                                     <span class="info-value">${data.created_date}</span>
                                 </div>
+                                <div>
+                                    <span class="info-label">Recorded Cost</span>
+                                    <span class="info-value">${costLabel}</span>
+                                </div>
                             </div>
                         </section>
 
@@ -330,7 +359,7 @@ function showDetails(cid) {
 }
 
 function searchComplaint() {
-    const cid = document.getElementById("search").value;
+    const cid = document.getElementById("search").value.trim();
 
     if (cid === "") {
         alert("Please enter Complaint ID");

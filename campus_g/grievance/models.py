@@ -134,6 +134,7 @@ class Complaint(models.Model):
     # ❌ WRONG: required field → error during complaint creation
     # ✅ should be optional
     solved_date = models.DateTimeField(null=True, blank=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     status_id = models.ForeignKey(Status, on_delete=models.CASCADE)
     cat_id = models.ForeignKey(Category, on_delete=models.CASCADE)

@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Staff Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v3" />
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v4" />
 </head>
 <body>
 <main class="page-shell">
@@ -17,9 +17,9 @@
 
         <div class="dashboard-header">
             <div>
-                <span class="eyebrow">Staff Operations</span>
-                <h1 class="page-title dashboard-title">Search, assign, and move complaints through resolution.</h1>
-                <p class="page-subtitle">
+                <span id="staffDashboardEyebrow" class="eyebrow">Staff Operations</span>
+                <h1 id="staffDashboardTitle" class="page-title dashboard-title">Search, assign, and move complaints through resolution.</h1>
+                <p id="staffDashboardSubtitle" class="page-subtitle">
                     Use one cleaner workspace to review complaint details, assign technical workers, and keep issue handling organized.
                 </p>
             </div>
@@ -81,6 +81,26 @@
             </div>
         </div>
 
+        <section id="chiefStatsPanel" class="results-panel chief-stats-panel" hidden>
+            <div class="results-head">
+                <div>
+                    <h2>Chief Warden Analytics</h2>
+                    <p class="results-subtitle">Monthly complaint volume and recorded cost, grouped by complaint filed month.</p>
+                </div>
+                <div class="field month-filter">
+                    <label for="chiefMonthSelect">Reporting Month</label>
+                    <select id="chiefMonthSelect"></select>
+                </div>
+            </div>
+
+            <div id="chiefStatsContent" class="section-stack">
+                <div class="empty-state">
+                    <p class="empty-title">Loading analytics</p>
+                    <p class="empty-copy">Monthly hostel-wise complaint and cost stats will appear here.</p>
+                </div>
+            </div>
+        </section>
+
         <div class="results-panel">
             <div class="results-head">
                 <div>
@@ -110,6 +130,10 @@
 <script>
 let empId = sessionStorage.getItem("emp_id");
 let firstLoginRequired = sessionStorage.getItem("first_login_required");
+let staffProfileCache = null;
+let staffDesignation = "";
+let chiefStatsData = [];
+let selectedChiefMonth = null;
 
 if (!empId) {
     alert("Please login first");
@@ -137,6 +161,54 @@ function emptyState(title, copy) {
             <p class="empty-copy">${copy}</p>
         </div>
     `;
+}
+
+function formatCost(cost, emptyLabel = "Not set") {
+    if (cost === null || cost === undefined || cost === "") {
+        return emptyLabel;
+    }
+
+    const numericCost = Number(cost);
+    if (Number.isNaN(numericCost)) {
+        return emptyLabel;
+    }
+
+    return `Rs ${numericCost.toFixed(2)}`;
+}
+
+function applyDashboardHeader(profile) {
+    const eyebrow = document.getElementById("staffDashboardEyebrow");
+    const title = document.getElementById("staffDashboardTitle");
+    const subtitle = document.getElementById("staffDashboardSubtitle");
+
+    if (profile.designation === "Chief Warden") {
+        eyebrow.textContent = "Chief Warden";
+        title.textContent = "Review monthly hostel complaints and total cost from one shared dashboard.";
+        subtitle.textContent = "Track hostel-wise monthly analytics, then move straight into complaint operations when needed.";
+        return;
+    }
+
+    eyebrow.textContent = profile.designation || "Staff Operations";
+    title.textContent = "Search, assign, and move complaints through resolution.";
+    subtitle.textContent = "Use one cleaner workspace to review complaint details, assign technical workers, and keep issue handling organized.";
+}
+
+async function fetchStaffProfileData(forceRefresh = false) {
+    if (staffProfileCache && !forceRefresh) {
+        return staffProfileCache;
+    }
+
+    const url = "{% url 'staff_profile' 0 %}".replace("/0/", `/${empId}/`);
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || "Profile information is unavailable right now.");
+    }
+
+    staffProfileCache = data;
+    staffDesignation = data.designation || "";
+    return data;
 }
 
 function showAddWorkerForm() {
@@ -186,8 +258,8 @@ function showAddWorkerForm() {
 }
 
 function submitNewWorker() {
-    const name = document.getElementById("w_name").value;
-    const mobile = document.getElementById("w_mobile").value;
+    const name = document.getElementById("w_name").value.trim();
+    const mobile = document.getElementById("w_mobile").value.trim();
     const category = document.getElementById("w_category").value;
 
     if (!name || !mobile || !category) {
@@ -206,8 +278,12 @@ function submitNewWorker() {
             alert("Worker added successfully!");
             showAddWorkerForm();
         } else {
-            alert("Failed to add worker: " + data.error);
+            alert("Failed to add worker: " + (data.error || "Unknown error"));
         }
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        alert("Could not add the worker right now.");
     });
 }
 
@@ -230,6 +306,10 @@ function renderComplaintCard(complaint) {
                 <div class="meta-card">
                     <span class="meta-label">Operational State</span>
                     <strong class="meta-value">${complaint.status}</strong>
+                </div>
+                <div class="meta-card">
+                    <span class="meta-label">Recorded Cost</span>
+                    <strong class="meta-value">${formatCost(complaint.cost)}</strong>
                 </div>
             </div>
 
@@ -309,27 +389,29 @@ function workerMarkup(workers) {
 }
 
 function actionMarkup(data) {
-    if (data.status === "Pending") {
+    if (data.status === "Solved") {
         return `
-            <div class="form-actions">
-                <button class="secondary inline" onclick="updateStatus(${data.id}, 'In Progress')">Mark In Progress</button>
-                <button class="inline" onclick="updateStatus(${data.id}, 'Solved')">Mark as Solved</button>
+            <div class="notice-card">
+                <p class="notice-title">Resolution Complete</p>
+                <p class="notice-copy">This complaint has already been marked as solved with a recorded cost of ${formatCost(data.cost)}.</p>
             </div>
         `;
     }
 
-    if (data.status === "In Progress") {
-        return `
-            <div class="form-actions">
-                <button class="inline" onclick="updateStatus(${data.id}, 'Solved')">Mark as Solved</button>
-            </div>
-        `;
-    }
+    const progressButton = data.status === "Pending"
+        ? `<button class="secondary inline" onclick="updateStatus(${data.id}, 'In Progress')">Mark In Progress</button>`
+        : "";
 
     return `
-        <div class="notice-card">
-            <p class="notice-title">Resolution Complete</p>
-            <p class="notice-copy">This complaint has already been marked as solved.</p>
+        <div class="resolution-action-panel">
+            <div class="field resolution-cost-field">
+                <label for="resolution_cost_${data.id}">Final Cost</label>
+                <input id="resolution_cost_${data.id}" type="number" min="0" step="0.01" placeholder="Enter final cost before solving">
+            </div>
+            <div class="form-actions">
+                ${progressButton}
+                <button class="inline" onclick="markSolved(${data.id})">Mark as Solved</button>
+            </div>
         </div>
     `;
 }
@@ -397,6 +479,14 @@ function showDetails(cid) {
                                     <span class="info-label">Filed On</span>
                                     <span class="info-value">${data.created_date}</span>
                                 </div>
+                                <div>
+                                    <span class="info-label">Recorded Cost</span>
+                                    <span class="info-value">${formatCost(data.cost)}</span>
+                                </div>
+                                <div>
+                                    <span class="info-label">Solved On</span>
+                                    <span class="info-value">${data.solved_date || "Not solved yet"}</span>
+                                </div>
                             </div>
                         </section>
 
@@ -431,7 +521,7 @@ function showDetails(cid) {
 
                     <section class="detail-panel">
                         <p class="panel-title">Staff Actions</p>
-                        <p class="panel-copy">Use the controls below to move the complaint through the resolution workflow.</p>
+                        <p class="panel-copy">Wardens and caretakers can record the final complaint cost while marking the issue as solved.</p>
                         ${actionMarkup(data)}
                     </section>
                 </div>
@@ -443,20 +533,179 @@ function showDetails(cid) {
         });
 }
 
-function updateStatus(id, newStatus) {
+function markSolved(id) {
+    const costInput = document.getElementById(`resolution_cost_${id}`);
+
+    if (!costInput) {
+        return;
+    }
+
+    const cost = costInput.value.trim();
+    if (!cost) {
+        alert("Please enter the final cost before marking the complaint as solved.");
+        return;
+    }
+
+    if (Number(cost) < 0) {
+        alert("Cost cannot be negative.");
+        return;
+    }
+
+    updateStatus(id, "Solved", cost);
+}
+
+function updateStatus(id, newStatus, cost = null) {
+    const payload = {
+        id: id,
+        status: newStatus,
+        emp_id: Number(empId)
+    };
+
+    if (newStatus === "Solved") {
+        payload.cost = cost;
+    }
+
     fetch("{% url 'update_status' %}", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: id, status: newStatus, emp_id: empId })
+        body: JSON.stringify(payload)
     })
     .then((response) => response.json())
     .then((data) => {
-        if (data.success) showDetails(id);
+        if (data.success) {
+            showDetails(id);
+            if (staffDesignation === "Chief Warden") {
+                loadChiefWardenStats(selectedChiefMonth);
+            }
+        } else {
+            alert(data.error || "Could not update complaint status.");
+        }
+    })
+    .catch((error) => {
+        console.error("Error:", error);
+        alert("Could not update complaint status right now.");
     });
 }
 
+function renderHostelStatCard(hostel) {
+    return `
+        <article class="metric-card hostel-stat-card">
+            <span class="metric-label">${hostel.hostel_name}</span>
+            <strong class="metric-value">${hostel.complaint_count}</strong>
+            <p class="metric-note">Complaints recorded in this month</p>
+            <div class="meta-inline">
+                <span class="meta-pill cost-pill"><strong>Cost:</strong> ${formatCost(hostel.total_cost, "Rs 0.00")}</span>
+            </div>
+        </article>
+    `;
+}
+
+function renderChiefWardenStats(monthKey) {
+    const content = document.getElementById("chiefStatsContent");
+    const monthData = chiefStatsData.find((item) => item.key === monthKey) || chiefStatsData[0];
+
+    if (!monthData) {
+        content.innerHTML = emptyState(
+            "No analytics available",
+            "Monthly hostel-wise complaint and cost data will appear once complaints are registered."
+        );
+        return;
+    }
+
+    selectedChiefMonth = monthData.key;
+
+    const sortedHostels = [...monthData.hostels].sort((left, right) => {
+        const countDifference = right.complaint_count - left.complaint_count;
+        if (countDifference !== 0) {
+            return countDifference;
+        }
+
+        return Number(right.total_cost || 0) - Number(left.total_cost || 0);
+    });
+
+    content.innerHTML = `
+        <div class="chief-stats-body">
+            <div class="metric-grid chief-summary-grid">
+                <article class="metric-card">
+                    <span class="metric-label">Monthly Complaints</span>
+                    <strong class="metric-value">${monthData.total_complaints}</strong>
+                    <p class="metric-note">Complaints filed in ${monthData.label}</p>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Monthly Total Cost</span>
+                    <strong class="metric-value">${formatCost(monthData.total_cost, "Rs 0.00")}</strong>
+                    <p class="metric-note">Recorded complaint cost for the selected month</p>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Hostels With Complaints</span>
+                    <strong class="metric-value">${monthData.active_hostels}</strong>
+                    <p class="metric-note">Hostels that logged at least one complaint</p>
+                </article>
+            </div>
+
+            <div class="results-head">
+                <div>
+                    <p class="results-title">Hostel Breakdown</p>
+                    <p class="results-subtitle">Each hostel shows the number of complaints and the total recorded cost for ${monthData.label}.</p>
+                </div>
+                <span class="meta-pill"><strong>${monthData.label}</strong></span>
+            </div>
+
+            <div class="hostel-stats-grid">
+                ${sortedHostels.map(renderHostelStatCard).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function loadChiefWardenStats(preferredMonth = selectedChiefMonth) {
+    const panel = document.getElementById("chiefStatsPanel");
+    const content = document.getElementById("chiefStatsContent");
+    const monthSelect = document.getElementById("chiefMonthSelect");
+
+    panel.hidden = false;
+    content.innerHTML = emptyState("Loading analytics", "Fetching monthly hostel complaint and cost data.");
+
+    const url = "{% url 'chief_warden_monthly_stats' 0 %}".replace("/0/", `/${empId}/`);
+
+    fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                content.innerHTML = emptyState("Unable to load analytics", data.error || "Monthly stats are unavailable right now.");
+                return;
+            }
+
+            chiefStatsData = data.months || [];
+
+            if (!chiefStatsData.length) {
+                monthSelect.innerHTML = "<option selected>No monthly data</option>";
+                content.innerHTML = emptyState(
+                    "No complaint stats yet",
+                    "Monthly hostel-wise complaint and cost data will appear once complaints are registered."
+                );
+                return;
+            }
+
+            monthSelect.innerHTML = chiefStatsData
+                .map((month) => `<option value="${month.key}">${month.label}</option>`)
+                .join("");
+
+            const nextMonth = chiefStatsData.some((month) => month.key === preferredMonth)
+                ? preferredMonth
+                : (data.default_month || chiefStatsData[0].key);
+
+            monthSelect.value = nextMonth;
+            renderChiefWardenStats(nextMonth);
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            content.innerHTML = emptyState("Unable to load analytics", "Please try again after the connection recovers.");
+        });
+}
+
 function searchComplaint() {
-    const cid = document.getElementById("search").value;
+    const cid = document.getElementById("search").value.trim();
     if (cid === "") return;
 
     const searchUrl = "{% url 'search_complaint' 0 %}".replace("/0/", `/${cid}/`);
@@ -468,6 +717,10 @@ function searchComplaint() {
             } else {
                 alert("Complaint Not Found");
             }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            alert("Could not search the complaint right now.");
         });
 }
 
@@ -532,21 +785,16 @@ document.getElementById("staffProfileClose").style.display = "none";
 document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {
     field.style.display = "none";
 });
+document.getElementById("chiefMonthSelect").addEventListener("change", (event) => {
+    renderChiefWardenStats(event.target.value);
+});
 
 function loadStaffProfile() {
     const content = document.getElementById("staffProfileContent");
     content.innerHTML = emptyState("Loading profile", "Fetching your staff account details.");
 
-    const url = "{% url 'staff_profile' 0 %}".replace("/0/", `/${empId}/`);
-
-    fetch(url)
-        .then((response) => response.json())
+    fetchStaffProfileData()
         .then((data) => {
-            if (!data.success) {
-                content.innerHTML = emptyState("Unable to load profile", data.error || "Profile information is unavailable right now.");
-                return;
-            }
-
             content.innerHTML = `
                 <div>
                     <span class="info-label">Name</span>
@@ -580,7 +828,7 @@ function loadStaffProfile() {
         })
         .catch((error) => {
             console.error("Error:", error);
-            content.innerHTML = emptyState("Unable to load profile", "Please try again after the connection recovers.");
+            content.innerHTML = emptyState("Unable to load profile", error.message || "Please try again after the connection recovers.");
         });
 }
 
@@ -626,6 +874,24 @@ function changeStaffPassword() {
         alert("Could not update password right now.");
     });
 }
+
+function initializeStaffDashboard() {
+    fetchStaffProfileData()
+        .then((profile) => {
+            applyDashboardHeader(profile);
+
+            if (profile.designation === "Chief Warden") {
+                loadChiefWardenStats();
+            } else {
+                document.getElementById("chiefStatsPanel").hidden = true;
+            }
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+        });
+}
+
+initializeStaffDashboard();
 </script>
 </body>
 </html>
