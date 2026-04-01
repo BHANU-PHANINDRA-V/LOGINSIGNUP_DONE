@@ -857,7 +857,7 @@ button.inline,
 */
 /* ============================================================
    Campus Grievance System — index.css
-   Design: Refined institutional dark theme
+   Design: Professional light lavender theme
    Fonts: DM Serif Display (headings) + DM Sans (body)
    ============================================================ */
 
@@ -866,40 +866,40 @@ button.inline,
 /* ── Custom Properties ─────────────────────────────────────── */
 :root {
   /* Background layers */
-  --bg-base:        #0d0f12;
-  --bg-surface:     #13161b;
-  --bg-panel:       #181c22;
-  --bg-raised:      #1e232b;
-  --bg-hover:       #252b35;
+  --bg-base:        #f8f4ff;
+  --bg-surface:     #fffdfb;
+  --bg-panel:       #f5efff;
+  --bg-raised:      #edf4ff;
+  --bg-hover:       #e9ddff;
 
   /* Borders */
-  --border-subtle:  rgba(255,255,255,0.06);
-  --border-muted:   rgba(255,255,255,0.10);
-  --border-strong:  rgba(255,255,255,0.16);
+  --border-subtle:  rgba(140,115,180,0.14);
+  --border-muted:   rgba(140,115,180,0.22);
+  --border-strong:  rgba(140,115,180,0.34);
 
   /* Text */
-  --text-primary:   #eef0f3;
-  --text-secondary: #8b919e;
-  --text-muted:     #555d6b;
-  --text-inverse:   #0d0f12;
+  --text-primary:   #302646;
+  --text-secondary: #625775;
+  --text-muted:     #9385a2;
+  --text-inverse:   #fffdfb;
 
-  /* Accent — amber-gold */
-  --accent:         #e8a838;
-  --accent-dim:     rgba(232,168,56,0.15);
-  --accent-hover:   #f0bb5a;
+  /* Accent — bright lavender */
+  --accent:         #9d7bff;
+  --accent-dim:     rgba(157,123,255,0.16);
+  --accent-hover:   #8b69ec;
 
   /* Status colours */
-  --status-pending-bg:   rgba(234,179,8,0.12);
-  --status-pending-text: #f5c518;
-  --status-progress-bg:  rgba(59,130,246,0.12);
-  --status-progress-text:#60a5fa;
-  --status-solved-bg:    rgba(34,197,94,0.12);
-  --status-solved-text:  #4ade80;
+  --status-pending-bg:   rgba(176,141,136,0.18);
+  --status-pending-text: #8b6762;
+  --status-progress-bg:  rgba(191,212,241,0.58);
+  --status-progress-text:#5b78a2;
+  --status-solved-bg:    rgba(182,220,193,0.50);
+  --status-solved-text:  #47745d;
 
   /* Semantic */
-  --warning-bg:     rgba(245,158,11,0.10);
-  --warning-border: rgba(245,158,11,0.30);
-  --warning-text:   #fbbf24;
+  --warning-bg:     rgba(244,236,220,0.92);
+  --warning-border: rgba(159,129,112,0.32);
+  --warning-text:   #7c6559;
 
   /* Typography */
   --font-display: 'DM Serif Display', Georgia, serif;
@@ -912,9 +912,9 @@ button.inline,
   --radius-xl:  22px;
 
   /* Shadows */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg:  0 12px 40px rgba(0,0,0,0.6);
+  --shadow-sm:  0 10px 24px rgba(108,90,140,0.08);
+  --shadow-md:  0 18px 44px rgba(128,103,170,0.12);
+  --shadow-lg:  0 28px 60px rgba(128,103,170,0.14);
 
   /* Transitions */
   --t-fast:  150ms ease;
@@ -944,7 +944,9 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(232,168,56,0.06) 0%, transparent 70%);
+    radial-gradient(circle at 12% 10%, rgba(157,123,255,0.22) 0%, transparent 30%),
+    radial-gradient(circle at 88% 8%, rgba(191,212,241,0.55) 0%, transparent 26%),
+    linear-gradient(180deg, #fffdfb 0%, #f8f4ff 52%, #f4ede3 100%);
 }
 
 /* ── Typography ────────────────────────────────────────────── */
@@ -987,7 +989,7 @@ pre {
 }
 
 .container {
-  background: var(--bg-surface);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,245,255,0.96));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   padding: 2.5rem 3rem;
@@ -1012,7 +1014,7 @@ pre {
 }
 
 .container.hero-card {
-  background: var(--bg-panel);
+  background: linear-gradient(145deg, #f7efff, #fffaf3);
   border: 1px solid var(--border-muted);
 }
 
@@ -1039,13 +1041,13 @@ pre {
 }
 
 .auth-aside {
-  background: var(--bg-panel) !important;
+  background: linear-gradient(160deg, #efe5ff, #edf4ff 62%, #f7efe2) !important;
   border-right: 1px solid var(--border-subtle) !important;
   border-radius: 0 !important;
 }
 
 .auth-layout > .container.compact {
-  background: var(--bg-surface);
+  background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,242,255,0.98));
   border-radius: 0;
   border: none;
   max-width: 100%;
@@ -1055,7 +1057,7 @@ pre {
 
 /* ── Surface Panel ─────────────────────────────────────────── */
 .surface-panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(243,236,255,0.92));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   padding: 2.5rem;
@@ -1145,7 +1147,7 @@ button:hover,
 .btn:hover {
   background: var(--accent-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(232,168,56,0.30);
+  box-shadow: 0 10px 22px rgba(157,123,255,0.24);
 }
 
 button:active,
@@ -1373,7 +1375,7 @@ button.inline,
   height: 2rem;
   background: var(--accent-dim);
   color: var(--accent);
-  border: 1px solid rgba(232,168,56,0.25);
+  border: 1px solid rgba(157,123,255,0.24);
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -1517,7 +1519,7 @@ button.inline,
 }
 
 .toolbar-panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(244,236,255,0.94));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
@@ -1548,7 +1550,7 @@ button.inline,
 
 /* ── Results Panel ─────────────────────────────────────────── */
 .results-panel {
-  background: var(--bg-surface);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,246,255,0.95));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
@@ -1606,11 +1608,11 @@ button.inline,
 .box.solved button {
   background: var(--status-solved-bg);
   color: var(--status-solved-text);
-  border: 1px solid rgba(74,222,128,0.20);
+  border: 1px solid rgba(71,116,93,0.18);
 }
 
 .box.solved button:hover {
-  background: rgba(34,197,94,0.22);
+  background: rgba(182,220,193,0.72);
   transform: none;
   box-shadow: none;
 }
@@ -1618,11 +1620,11 @@ button.inline,
 .box.inprogress button {
   background: var(--status-progress-bg);
   color: var(--status-progress-text);
-  border: 1px solid rgba(96,165,250,0.20);
+  border: 1px solid rgba(91,120,162,0.18);
 }
 
 .box.inprogress button:hover {
-  background: rgba(59,130,246,0.22);
+  background: rgba(191,212,241,0.86);
   transform: none;
   box-shadow: none;
 }
@@ -1630,11 +1632,11 @@ button.inline,
 .box.pending button {
   background: var(--status-pending-bg);
   color: var(--status-pending-text);
-  border: 1px solid rgba(245,197,24,0.20);
+  border: 1px solid rgba(139,103,98,0.18);
 }
 
 .box.pending button:hover {
-  background: rgba(234,179,8,0.22);
+  background: rgba(214,196,191,0.72);
   transform: none;
   box-shadow: none;
 }
@@ -1683,7 +1685,7 @@ button.inline,
 }
 
 .ticket-card {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,240,255,0.96));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.4rem 1.5rem;
@@ -1829,7 +1831,7 @@ button.inline,
 }
 
 .detail-panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(247,240,255,0.95));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.4rem 1.5rem;
@@ -1839,7 +1841,7 @@ button.inline,
 }
 
 .description-panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,253,251,0.99), rgba(245,239,255,0.96));
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 1.4rem 1.5rem;
@@ -1852,7 +1854,7 @@ button.inline,
 
 /* ── Profile Panel ─────────────────────────────────────────── */
 .profile-panel {
-  background: var(--bg-panel);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(245,239,255,0.96));
   border: 1px solid var(--border-muted);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
@@ -1959,7 +1961,7 @@ button.inline,
   height: 3rem;
   background: var(--status-solved-bg);
   color: var(--status-solved-text);
-  border: 1px solid rgba(74,222,128,0.25);
+  border: 1px solid rgba(71,116,93,0.22);
   border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 700;
@@ -2005,7 +2007,7 @@ button.inline,
 
 .cost-pill {
   background: var(--accent-dim);
-  border-color: rgba(232,168,56,0.25);
+  border-color: rgba(157,123,255,0.24);
   color: var(--accent);
 }
 
