@@ -68,12 +68,6 @@
                             <label for="category">Category</label>
                             <select id="category">
                                 <option value="" disabled selected>Select Category</option>
-                                <option value="Electrical">Electrical</option>
-                                <option value="Water">Water</option>
-                                <option value="Furniture">Furniture</option>
-                                <option value="Civil">Civil</option>
-                                <option value="Network">Network</option>
-                                <option value="Sanitation">Sanitation</option>
                             </select>
                         </div>
 
@@ -100,6 +94,36 @@
 </main>
 
 <script>
+function loadCategories() {
+    const categorySelect = document.getElementById("category");
+    categorySelect.innerHTML = '<option value="" disabled selected>Loading categories...</option>';
+
+    fetch("{% url 'category_list' %}")
+        .then((response) => {
+            if (!response.ok) throw new Error("Server Error");
+            return response.json();
+        })
+        .then((data) => {
+            categorySelect.innerHTML = '<option value="" disabled selected>Select Category</option>';
+
+            if (!Array.isArray(data) || data.length === 0) {
+                categorySelect.innerHTML = '<option value="" disabled selected>No categories available</option>';
+                return;
+            }
+
+            data.forEach((category) => {
+                const option = document.createElement("option");
+                option.value = category.cat_name;
+                option.textContent = category.cat_name;
+                categorySelect.appendChild(option);
+            });
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            categorySelect.innerHTML = '<option value="" disabled selected>Unable to load categories</option>';
+        });
+}
+
 function loadHostels() {
     const hostelSelect = document.getElementById("hostel");
     hostelSelect.innerHTML = '<option value="" disabled selected>Loading hostels...</option>';
@@ -128,6 +152,11 @@ function loadHostels() {
             console.error("Error:", error);
             hostelSelect.innerHTML = '<option value="" disabled selected>Unable to load hostels</option>';
         });
+}
+
+function initializeComplaintForm() {
+    loadCategories();
+    loadHostels();
 }
 
 function addComplaint() {
@@ -182,7 +211,7 @@ function addComplaint() {
     });
 }
 
-window.onload = loadHostels;
+window.onload = initializeComplaintForm;
 </script>
 </body>
 </html>

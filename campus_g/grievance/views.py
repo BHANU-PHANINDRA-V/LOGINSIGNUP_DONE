@@ -147,6 +147,15 @@ def hostel_list(request):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
+@csrf_exempt
+def category_list(request):
+    try:
+        categories = Category.objects.all().order_by("cat_name")
+        data = [{"cat_id": category.cat_id, "cat_name": category.cat_name} for category in categories]
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
 
 # --- COMPLAINT APIS ---
 @csrf_exempt
