@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Staff Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2" />
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v3" />
 </head>
 <body>
 <main class="page-shell">
@@ -23,11 +23,6 @@
                     Use one cleaner workspace to review complaint details, assign technical workers, and keep issue handling organized.
                 </p>
             </div>
-
-            <div class="dashboard-tags">
-                <span class="tag">Staff workspace</span>
-                <span class="tag">Operational control</span>
-            </div>
         </div>
 
         <div id="profilePanel" class="profile-panel" hidden>
@@ -42,7 +37,7 @@
 
             <div class="form-actions">
                 <button id="staffPasswordToggle" class="inline" type="button" onclick="toggleStaffPasswordForm()">Change Password</button>
-                <button class="ghost inline" type="button" onclick="closeProfilePanel()">Close</button>
+                <button id="staffProfileClose" class="ghost inline" type="button" onclick="closeProfilePanel()" style="display: none;">Close</button>
             </div>
 
             <section id="staffPasswordPanel" class="detail-panel" hidden>
@@ -50,17 +45,17 @@
                 <p class="panel-copy">Use your current password and save a new one for future staff logins.</p>
 
                 <div class="form-stack profile-form">
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="staff_current_pswd">Current Password</label>
                         <input type="password" id="staff_current_pswd" placeholder="Enter current password">
                     </div>
 
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="staff_new_pswd">New Password</label>
                         <input type="password" id="staff_new_pswd" placeholder="Enter new password">
                     </div>
 
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="staff_confirm_pswd">Confirm Password</label>
                         <input type="password" id="staff_confirm_pswd" placeholder="Confirm new password">
                     </div>
@@ -476,32 +471,42 @@ function searchComplaint() {
         });
 }
 
-function toggleProfilePanel(forceState) {
+function toggleProfilePanel() {
     const panel = document.getElementById("profilePanel");
     const passwordPanel = document.getElementById("staffPasswordPanel");
-    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.hidden;
+    const passwordFields = document.querySelectorAll("#staffPasswordPanel .field");
+    const closeButton = document.getElementById("staffProfileClose");
 
-    panel.hidden = !shouldOpen;
-
-    if (shouldOpen) {
-        passwordPanel.hidden = true;
-        clearStaffPasswordFields();
-        loadStaffProfile();
-    }
+    panel.hidden = false;
+    closeButton.style.display = "inline-flex";
+    passwordPanel.hidden = true;
+    passwordFields.forEach((field) => {
+        field.style.display = "none";
+    });
+    clearStaffPasswordFields();
+    loadStaffProfile();
 }
 
 function closeProfilePanel() {
     document.getElementById("profilePanel").hidden = true;
     document.getElementById("staffPasswordPanel").hidden = true;
+    document.getElementById("staffProfileClose").style.display = "none";
+    document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {
+        field.style.display = "none";
+    });
     document.getElementById("staffProfileContent").innerHTML = "";
     clearStaffPasswordFields();
 }
 
 function toggleStaffPasswordForm() {
     const passwordPanel = document.getElementById("staffPasswordPanel");
+    const passwordFields = document.querySelectorAll("#staffPasswordPanel .field");
     const isHidden = passwordPanel.hidden;
 
     passwordPanel.hidden = !isHidden;
+    passwordFields.forEach((field) => {
+        field.style.display = isHidden ? "grid" : "none";
+    });
 
     if (!isHidden) {
         clearStaffPasswordFields();
@@ -520,6 +525,13 @@ function logoutUser() {
     sessionStorage.removeItem("first_login_required");
     window.location = "{% url 'login_page' %}";
 }
+
+document.getElementById("profilePanel").hidden = true;
+document.getElementById("staffPasswordPanel").hidden = true;
+document.getElementById("staffProfileClose").style.display = "none";
+document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {
+    field.style.display = "none";
+});
 
 function loadStaffProfile() {
     const content = document.getElementById("staffProfileContent");
@@ -602,6 +614,9 @@ function changeStaffPassword() {
             alert("Password updated successfully.");
             clearStaffPasswordFields();
             document.getElementById("staffPasswordPanel").hidden = true;
+            document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {
+                field.style.display = "none";
+            });
         } else {
             alert("Error updating password: " + data.error);
         }

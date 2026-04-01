@@ -113,6 +113,7 @@ def student_profile(request, roll):
             "name": student.name,
             "mail": student.mail,
             "mobile": student.mobile,
+            "hostel_id": student.hostel_id.hostel_id if student.hostel_id else None,
             "hostel": student.hostel_id.name if student.hostel_id else "Not Assigned",
         }
         return JsonResponse(data)
@@ -171,7 +172,6 @@ def register_complaint(request):
 
         student = Student.objects.get(roll=data["roll"])
         category, _ = Category.objects.get_or_create(cat_name=data["category"])
-        hostel_obj = Hostel.objects.get(hostel_id=data["hostel_id"])
         pending_status, _ = Status.objects.get_or_create(status_name="Pending")
 
         complaint = Complaint.objects.create(
@@ -179,7 +179,7 @@ def register_complaint(request):
             description=data["description"],
             cat_id=category,
             student_id=student,
-            hostel_id=hostel_obj,
+            hostel_id=student.hostel_id,
             status_id=pending_status,
             attachment=photo
         )
@@ -224,7 +224,13 @@ def staff_complaints(request, emp_id):
 @csrf_exempt
 def complaint_details(request, cid):
     try:
-        c = Complaint.objects.get(Complaint_id=cid)
+        c = Complaint.objects.select_related(
+            "status_id",
+            "cat_id",
+            "student_id",
+            "hostel_id",
+            "solved_by",
+        ).get(Complaint_id=cid)
         workers = TechnicalWorker.objects.filter(cat_id=c.cat_id)
         worker_list = [{"name": w.name, "mobile": w.mobile} for w in workers]
 
@@ -237,6 +243,8 @@ def complaint_details(request, cid):
             "category": c.cat_id.cat_name,
             "created_date": c.created_date.strftime("%B %d, %Y - %I:%M %p") if c.created_date else "N/A",
             "solved_date": c.solved_date.strftime("%B %d, %Y - %I:%M %p") if c.solved_date else None,
+            "solved_by_emp_id": c.solved_by.emp_id if c.solved_by else None,
+            "solved_by_name": c.solved_by.name if c.solved_by else None,
             "student_name": c.student_id.name,
             "student_roll": c.student_id.roll,
             "student_mobile": c.student_id.mobile,
@@ -263,6 +271,9 @@ def update_status(request):
                     staff = Staff.objects.get(emp_id=data["emp_id"])
                     complaint.solved_by = staff
                 except Exception: pass
+        else:
+            complaint.solved_date = None
+            complaint.solved_by = None
             
         complaint.save()
         return JsonResponse({"success": True})

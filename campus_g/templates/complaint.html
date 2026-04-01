@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Complaint</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v3">
 </head>
 <body>
 <main class="page-shell">
@@ -72,10 +72,8 @@
                         </div>
 
                         <div class="field">
-                            <label for="hostel">Hostel</label>
-                            <select id="hostel">
-                                <option value="" disabled selected>Select Your Hostel</option>
-                            </select>
+                            <label for="hostelDisplay">Hostel</label>
+                            <input id="hostelDisplay" placeholder="Loading your hostel" readonly>
                         </div>
                     </div>
 
@@ -94,6 +92,8 @@
 </main>
 
 <script>
+let studentHostelId = null;
+
 function loadCategories() {
     const categorySelect = document.getElementById("category");
     categorySelect.innerHTML = '<option value="" disabled selected>Loading categories...</option>';
@@ -124,39 +124,50 @@ function loadCategories() {
         });
 }
 
-function loadHostels() {
-    const hostelSelect = document.getElementById("hostel");
-    hostelSelect.innerHTML = '<option value="" disabled selected>Loading hostels...</option>';
+function loadStudentHostel() {
+    const rollNumber = sessionStorage.getItem("roll");
+    const hostelDisplay = document.getElementById("hostelDisplay");
 
-    fetch("{% url 'hostel_list' %}")
+    if (!rollNumber) {
+        alert("You must be logged in to register a complaint.");
+        window.location = "{% url 'login_page' %}";
+        return;
+    }
+
+    hostelDisplay.value = "Loading your hostel...";
+
+    const profileUrl = "{% url 'student_profile' 'roll-placeholder' %}".replace(
+        "roll-placeholder",
+        encodeURIComponent(rollNumber)
+    );
+
+    fetch(profileUrl)
         .then((response) => {
             if (!response.ok) throw new Error("Server Error");
             return response.json();
         })
         .then((data) => {
-            hostelSelect.innerHTML = '<option value="" disabled selected>Select Your Hostel</option>';
+            if (!data.success) {
+                throw new Error(data.error || "Unable to load student hostel");
+            }
 
-            if (!Array.isArray(data) || data.length === 0) {
-                hostelSelect.innerHTML = '<option value="" disabled selected>No hostels available</option>';
+            if (!data.hostel || data.hostel === "Not Assigned") {
+                hostelDisplay.value = "Hostel not assigned";
                 return;
             }
 
-            data.forEach((hostel) => {
-                const option = document.createElement("option");
-                option.value = hostel.hostel_id;
-                option.textContent = hostel.name;
-                hostelSelect.appendChild(option);
-            });
+            studentHostelId = data.hostel_id;
+            hostelDisplay.value = data.hostel;
         })
         .catch((error) => {
             console.error("Error:", error);
-            hostelSelect.innerHTML = '<option value="" disabled selected>Unable to load hostels</option>';
+            hostelDisplay.value = "Unable to load hostel";
         });
 }
 
 function initializeComplaintForm() {
     loadCategories();
-    loadHostels();
+    loadStudentHostel();
 }
 
 function addComplaint() {
@@ -170,11 +181,15 @@ function addComplaint() {
     let title = document.getElementById("title").value;
     let desc = document.getElementById("desc").value;
     let category = document.getElementById("category").value;
-    let hostelId = parseInt(document.getElementById("hostel").value);
     let photo = document.getElementById("photo").files[0];
 
-    if (!title || !desc || !category || isNaN(hostelId)) {
-        alert("Please fill in all fields and select a hostel.");
+    if (!title || !desc || !category) {
+        alert("Please fill in all required fields.");
+        return;
+    }
+
+    if (!studentHostelId) {
+        alert("Your hostel details could not be loaded. Please try again.");
         return;
     }
 
@@ -183,7 +198,7 @@ function addComplaint() {
     formData.append("title", title);
     formData.append("description", desc);
     formData.append("category", category);
-    formData.append("hostel_id", hostelId);
+    formData.append("hostel_id", studentHostelId);
 
     if (photo) {
         formData.append("photo", photo);

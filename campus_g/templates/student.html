@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Dashboard</title>
-    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v2">
+    <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v3">
 </head>
 <body>
 <main class="page-shell">
@@ -23,11 +23,6 @@
                     Search by complaint ID, filter by status, and open rich details without losing your place.
                 </p>
             </div>
-
-            <div class="dashboard-tags">
-                <span class="tag">Live tracking</span>
-                <span class="tag">Student view</span>
-            </div>
         </div>
 
         <div id="profilePanel" class="profile-panel" hidden>
@@ -42,7 +37,7 @@
 
             <div class="form-actions">
                 <button id="studentPasswordToggle" class="inline" type="button" onclick="toggleStudentPasswordForm()">Change Password</button>
-                <button class="ghost inline" type="button" onclick="closeProfilePanel()">Close</button>
+                <button id="studentProfileClose" class="ghost inline" type="button" onclick="closeProfilePanel()" style="display: none;">Close</button>
             </div>
 
             <section id="studentPasswordPanel" class="detail-panel" hidden>
@@ -50,17 +45,17 @@
                 <p class="panel-copy">Enter your current password and choose a new one for your student account.</p>
 
                 <div class="form-stack profile-form">
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="student_current_pswd">Current Password</label>
                         <input type="password" id="student_current_pswd" placeholder="Enter current password">
                     </div>
 
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="student_new_pswd">New Password</label>
                         <input type="password" id="student_new_pswd" placeholder="Enter new password">
                     </div>
 
-                    <div class="field">
+                    <div class="field" style="display: none;">
                         <label for="student_confirm_pswd">Confirm Password</label>
                         <input type="password" id="student_confirm_pswd" placeholder="Confirm new password">
                     </div>
@@ -242,8 +237,21 @@ function showDetails(cid) {
             const solvedPanel = data.status === "Solved"
                 ? `
                     <div class="notice-card">
-                        <p class="notice-title">Resolution Timestamp</p>
-                        <p class="notice-copy">This complaint was marked solved on ${data.solved_date}.</p>
+                        <p class="notice-title">Resolution Details</p>
+                        <div class="info-list">
+                            <div>
+                                <span class="info-label">Solved By ID</span>
+                                <span class="info-value">${data.solved_by_emp_id || "N/A"}</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Solved By Name</span>
+                                <span class="info-value">${data.solved_by_name || "N/A"}</span>
+                            </div>
+                            <div>
+                                <span class="info-label">Solved On</span>
+                                <span class="info-value">${data.solved_date || "N/A"}</span>
+                            </div>
+                        </div>
                     </div>
                 `
                 : `
@@ -332,32 +340,42 @@ function searchComplaint() {
     showDetails(cid);
 }
 
-function toggleProfilePanel(forceState) {
+function toggleProfilePanel() {
     const panel = document.getElementById("profilePanel");
     const passwordPanel = document.getElementById("studentPasswordPanel");
-    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.hidden;
+    const passwordFields = document.querySelectorAll("#studentPasswordPanel .field");
+    const closeButton = document.getElementById("studentProfileClose");
 
-    panel.hidden = !shouldOpen;
-
-    if (shouldOpen) {
-        passwordPanel.hidden = true;
-        clearStudentPasswordFields();
-        loadStudentProfile();
-    }
+    panel.hidden = false;
+    closeButton.style.display = "inline-flex";
+    passwordPanel.hidden = true;
+    passwordFields.forEach((field) => {
+        field.style.display = "none";
+    });
+    clearStudentPasswordFields();
+    loadStudentProfile();
 }
 
 function closeProfilePanel() {
     document.getElementById("profilePanel").hidden = true;
     document.getElementById("studentPasswordPanel").hidden = true;
+    document.getElementById("studentProfileClose").style.display = "none";
+    document.querySelectorAll("#studentPasswordPanel .field").forEach((field) => {
+        field.style.display = "none";
+    });
     document.getElementById("studentProfileContent").innerHTML = "";
     clearStudentPasswordFields();
 }
 
 function toggleStudentPasswordForm() {
     const passwordPanel = document.getElementById("studentPasswordPanel");
+    const passwordFields = document.querySelectorAll("#studentPasswordPanel .field");
     const isHidden = passwordPanel.hidden;
 
     passwordPanel.hidden = !isHidden;
+    passwordFields.forEach((field) => {
+        field.style.display = isHidden ? "grid" : "none";
+    });
 
     if (!isHidden) {
         clearStudentPasswordFields();
@@ -375,6 +393,13 @@ function logoutUser() {
     sessionStorage.removeItem("role");
     window.location = "{% url 'login_page' %}";
 }
+
+document.getElementById("profilePanel").hidden = true;
+document.getElementById("studentPasswordPanel").hidden = true;
+document.getElementById("studentProfileClose").style.display = "none";
+document.querySelectorAll("#studentPasswordPanel .field").forEach((field) => {
+    field.style.display = "none";
+});
 
 function loadStudentProfile() {
     const content = document.getElementById("studentProfileContent");
@@ -449,6 +474,9 @@ function changeStudentPassword() {
             alert("Password updated successfully.");
             clearStudentPasswordFields();
             document.getElementById("studentPasswordPanel").hidden = true;
+            document.querySelectorAll("#studentPasswordPanel .field").forEach((field) => {
+                field.style.display = "none";
+            });
         } else {
             alert("Error updating password: " + data.error);
         }
