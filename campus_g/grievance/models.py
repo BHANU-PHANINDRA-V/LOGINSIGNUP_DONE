@@ -127,6 +127,7 @@ class Complaint(models.Model):
 
     title = models.TextField()
     description = models.TextField()
+    attachment = models.FileField(upload_to='complaint_images/', null=True, blank=True)
 
     created_date = models.DateTimeField(auto_now_add=True)
 

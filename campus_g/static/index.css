@@ -537,10 +537,12 @@ button.inline,
     margin-bottom: 20px;
 }
 
-.profile-corner {
+.topbar-actions {
     display: flex;
     justify-content: flex-end;
+    gap: 12px;
     margin-bottom: 18px;
+    flex-wrap: wrap;
 }
 
 .profile-trigger {
@@ -733,6 +735,21 @@ button.inline,
 .worker-list {
     list-style: none;
     padding: 0;
+}
+
+.attachment-preview {
+    display: grid;
+    gap: 16px;
+}
+
+.complaint-image {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 18px;
+    border: 1px solid var(--border-color);
+    background: var(--surface-soft);
+    padding: 8px;
 }
 
 .worker-item {

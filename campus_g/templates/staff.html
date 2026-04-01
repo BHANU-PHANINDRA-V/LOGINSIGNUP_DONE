@@ -10,8 +10,9 @@
 <body>
 <main class="page-shell">
     <section class="container wide">
-        <div class="profile-corner">
+        <div class="topbar-actions">
             <button class="secondary inline profile-trigger" type="button" onclick="toggleProfilePanel()">Profile</button>
+            <button class="ghost inline profile-trigger" type="button" onclick="logoutUser()">Logout</button>
         </div>
 
         <div class="dashboard-header">
@@ -29,18 +30,22 @@
             </div>
         </div>
 
-        <div id="profilePanel" class="profile-panel hidden">
+        <div id="profilePanel" class="profile-panel" hidden>
             <div class="results-head">
                 <div>
                     <p class="results-title">Staff Profile</p>
-                    <p class="results-subtitle">View your staff details and update your password without leaving the dashboard.</p>
+                    <p class="results-subtitle">View your staff details first, then open password controls only when needed.</p>
                 </div>
-                <button class="ghost inline" type="button" onclick="toggleProfilePanel(false)">Close</button>
             </div>
 
             <div id="staffProfileContent" class="info-list"></div>
 
-            <section class="detail-panel">
+            <div class="form-actions">
+                <button id="staffPasswordToggle" class="inline" type="button" onclick="toggleStaffPasswordForm()">Change Password</button>
+                <button class="ghost inline" type="button" onclick="closeProfilePanel()">Close</button>
+            </div>
+
+            <section id="staffPasswordPanel" class="detail-panel" hidden>
                 <p class="panel-title">Change Password</p>
                 <p class="panel-copy">Use your current password and save a new one for future staff logins.</p>
 
@@ -109,10 +114,15 @@
 
 <script>
 let empId = sessionStorage.getItem("emp_id");
+let firstLoginRequired = sessionStorage.getItem("first_login_required");
 
 if (!empId) {
     alert("Please login first");
     window.location = "{% url 'login_page' %}";
+}
+
+if (firstLoginRequired) {
+    window.location = "{% url 'change_password_page' %}";
 }
 
 function statusClass(status) {
@@ -363,6 +373,19 @@ function showDetails(cid) {
                         <p class="panel-copy">${data.description}</p>
                     </section>
 
+                    ${data.attachment_url ? `
+                        <section class="detail-panel">
+                            <p class="panel-title">Attached Image</p>
+                            <p class="panel-copy">Student-submitted reference image for this complaint.</p>
+                            <div class="attachment-preview">
+                                <img src="${data.attachment_url}" alt="Complaint attachment" class="complaint-image">
+                                <div class="form-actions">
+                                    <a class="btn secondary inline" href="${data.attachment_url}" target="_blank" rel="noopener noreferrer">Open Image</a>
+                                </div>
+                            </div>
+                        </section>
+                    ` : ""}
+
                     <div class="detail-grid">
                         <section class="detail-panel">
                             <p class="panel-title">Issue Details</p>
@@ -455,13 +478,47 @@ function searchComplaint() {
 
 function toggleProfilePanel(forceState) {
     const panel = document.getElementById("profilePanel");
-    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.classList.contains("hidden");
+    const passwordPanel = document.getElementById("staffPasswordPanel");
+    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.hidden;
 
-    panel.classList.toggle("hidden", !shouldOpen);
+    panel.hidden = !shouldOpen;
 
     if (shouldOpen) {
+        passwordPanel.hidden = true;
+        clearStaffPasswordFields();
         loadStaffProfile();
     }
+}
+
+function closeProfilePanel() {
+    document.getElementById("profilePanel").hidden = true;
+    document.getElementById("staffPasswordPanel").hidden = true;
+    document.getElementById("staffProfileContent").innerHTML = "";
+    clearStaffPasswordFields();
+}
+
+function toggleStaffPasswordForm() {
+    const passwordPanel = document.getElementById("staffPasswordPanel");
+    const isHidden = passwordPanel.hidden;
+
+    passwordPanel.hidden = !isHidden;
+
+    if (!isHidden) {
+        clearStaffPasswordFields();
+    }
+}
+
+function clearStaffPasswordFields() {
+    document.getElementById("staff_current_pswd").value = "";
+    document.getElementById("staff_new_pswd").value = "";
+    document.getElementById("staff_confirm_pswd").value = "";
+}
+
+function logoutUser() {
+    sessionStorage.removeItem("emp_id");
+    sessionStorage.removeItem("role");
+    sessionStorage.removeItem("first_login_required");
+    window.location = "{% url 'login_page' %}";
 }
 
 function loadStaffProfile() {
@@ -543,9 +600,8 @@ function changeStaffPassword() {
     .then((data) => {
         if (data.success) {
             alert("Password updated successfully.");
-            document.getElementById("staff_current_pswd").value = "";
-            document.getElementById("staff_new_pswd").value = "";
-            document.getElementById("staff_confirm_pswd").value = "";
+            clearStaffPasswordFields();
+            document.getElementById("staffPasswordPanel").hidden = true;
         } else {
             alert("Error updating password: " + data.error);
         }

@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 import json
 
@@ -137,29 +138,45 @@ def staff_profile(request, emp_id):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=400)
 
+@csrf_exempt
+def hostel_list(request):
+    try:
+        hostels = Hostel.objects.all().order_by("hostel_id")
+        data = [{"hostel_id": hostel.hostel_id, "name": hostel.name} for hostel in hostels]
+        return JsonResponse(data, safe=False)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=400)
+
 
 # --- COMPLAINT APIS ---
 @csrf_exempt
+@require_http_methods(["POST"])
 def register_complaint(request):
-    if request.method == "POST":
-        data = json.loads(request.body)
-        try:
-            student = Student.objects.get(roll=data["roll"])
-            category, _ = Category.objects.get_or_create(cat_name=data["category"])
-            hostel_obj = Hostel.objects.get(hostel_id=data["hostel_id"])
-            pending_status, _ = Status.objects.get_or_create(status_name="Pending")  
+    try:
+        if request.content_type and "application/json" in request.content_type:
+            data = json.loads(request.body)
+            photo = None
+        else:
+            data = request.POST
+            photo = request.FILES.get("photo")
 
-            complaint = Complaint.objects.create(
-                title=data["title"],
-                description=data["description"],
-                cat_id=category,
-                student_id=student,
-                hostel_id=hostel_obj, 
-                status_id=pending_status
-            )
-            return JsonResponse({"success": True, "complaint_id": complaint.Complaint_id})
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)})
+        student = Student.objects.get(roll=data["roll"])
+        category, _ = Category.objects.get_or_create(cat_name=data["category"])
+        hostel_obj = Hostel.objects.get(hostel_id=data["hostel_id"])
+        pending_status, _ = Status.objects.get_or_create(status_name="Pending")
+
+        complaint = Complaint.objects.create(
+            title=data["title"],
+            description=data["description"],
+            cat_id=category,
+            student_id=student,
+            hostel_id=hostel_obj,
+            status_id=pending_status,
+            attachment=photo
+        )
+        return JsonResponse({"success": True, "complaint_id": complaint.Complaint_id})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
 
 @csrf_exempt
 def search_complaint(request, cid):
@@ -215,7 +232,8 @@ def complaint_details(request, cid):
             "student_roll": c.student_id.roll,
             "student_mobile": c.student_id.mobile,
             "hostel": c.hostel_id.name,
-            "workers": worker_list
+            "workers": worker_list,
+            "attachment_url": c.attachment.url if c.attachment else None,
         }
         return JsonResponse(data)
     except Exception as e:

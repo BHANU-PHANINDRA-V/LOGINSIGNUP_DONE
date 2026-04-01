@@ -10,8 +10,9 @@
 <body>
 <main class="page-shell">
     <section class="container wide">
-        <div class="profile-corner">
+        <div class="topbar-actions">
             <button class="secondary inline profile-trigger" type="button" onclick="toggleProfilePanel()">Profile</button>
+            <button class="ghost inline profile-trigger" type="button" onclick="logoutUser()">Logout</button>
         </div>
 
         <div class="dashboard-header">
@@ -29,18 +30,22 @@
             </div>
         </div>
 
-        <div id="profilePanel" class="profile-panel hidden">
+        <div id="profilePanel" class="profile-panel" hidden>
             <div class="results-head">
                 <div>
                     <p class="results-title">Student Profile</p>
-                    <p class="results-subtitle">View your account details and update your password from one place.</p>
+                    <p class="results-subtitle">View your account details first, then open password controls only when needed.</p>
                 </div>
-                <button class="ghost inline" type="button" onclick="toggleProfilePanel(false)">Close</button>
             </div>
 
             <div id="studentProfileContent" class="info-list"></div>
 
-            <section class="detail-panel">
+            <div class="form-actions">
+                <button id="studentPasswordToggle" class="inline" type="button" onclick="toggleStudentPasswordForm()">Change Password</button>
+                <button class="ghost inline" type="button" onclick="closeProfilePanel()">Close</button>
+            </div>
+
+            <section id="studentPasswordPanel" class="detail-panel" hidden>
                 <p class="panel-title">Change Password</p>
                 <p class="panel-copy">Enter your current password and choose a new one for your student account.</p>
 
@@ -329,13 +334,46 @@ function searchComplaint() {
 
 function toggleProfilePanel(forceState) {
     const panel = document.getElementById("profilePanel");
-    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.classList.contains("hidden");
+    const passwordPanel = document.getElementById("studentPasswordPanel");
+    const shouldOpen = typeof forceState === "boolean" ? forceState : panel.hidden;
 
-    panel.classList.toggle("hidden", !shouldOpen);
+    panel.hidden = !shouldOpen;
 
     if (shouldOpen) {
+        passwordPanel.hidden = true;
+        clearStudentPasswordFields();
         loadStudentProfile();
     }
+}
+
+function closeProfilePanel() {
+    document.getElementById("profilePanel").hidden = true;
+    document.getElementById("studentPasswordPanel").hidden = true;
+    document.getElementById("studentProfileContent").innerHTML = "";
+    clearStudentPasswordFields();
+}
+
+function toggleStudentPasswordForm() {
+    const passwordPanel = document.getElementById("studentPasswordPanel");
+    const isHidden = passwordPanel.hidden;
+
+    passwordPanel.hidden = !isHidden;
+
+    if (!isHidden) {
+        clearStudentPasswordFields();
+    }
+}
+
+function clearStudentPasswordFields() {
+    document.getElementById("student_current_pswd").value = "";
+    document.getElementById("student_new_pswd").value = "";
+    document.getElementById("student_confirm_pswd").value = "";
+}
+
+function logoutUser() {
+    sessionStorage.removeItem("roll");
+    sessionStorage.removeItem("role");
+    window.location = "{% url 'login_page' %}";
 }
 
 function loadStudentProfile() {
@@ -409,9 +447,8 @@ function changeStudentPassword() {
     .then((data) => {
         if (data.success) {
             alert("Password updated successfully.");
-            document.getElementById("student_current_pswd").value = "";
-            document.getElementById("student_new_pswd").value = "";
-            document.getElementById("student_confirm_pswd").value = "";
+            clearStudentPasswordFields();
+            document.getElementById("studentPasswordPanel").hidden = true;
         } else {
             alert("Error updating password: " + data.error);
         }

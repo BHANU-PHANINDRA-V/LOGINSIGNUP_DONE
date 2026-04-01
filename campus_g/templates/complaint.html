@@ -81,16 +81,13 @@
                             <label for="hostel">Hostel</label>
                             <select id="hostel">
                                 <option value="" disabled selected>Select Your Hostel</option>
-                                <option value="1">Hostel A</option>
-                                <option value="2">Hostel B</option>
-                                <option value="3">Hostel C</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="field">
                         <label for="photo">Reference Photo</label>
-                        <input type="file" id="photo">
+                        <input type="file" id="photo" accept="image/*">
                     </div>
                 </div>
 
@@ -103,6 +100,36 @@
 </main>
 
 <script>
+function loadHostels() {
+    const hostelSelect = document.getElementById("hostel");
+    hostelSelect.innerHTML = '<option value="" disabled selected>Loading hostels...</option>';
+
+    fetch("{% url 'hostel_list' %}")
+        .then((response) => {
+            if (!response.ok) throw new Error("Server Error");
+            return response.json();
+        })
+        .then((data) => {
+            hostelSelect.innerHTML = '<option value="" disabled selected>Select Your Hostel</option>';
+
+            if (!Array.isArray(data) || data.length === 0) {
+                hostelSelect.innerHTML = '<option value="" disabled selected>No hostels available</option>';
+                return;
+            }
+
+            data.forEach((hostel) => {
+                const option = document.createElement("option");
+                option.value = hostel.hostel_id;
+                option.textContent = hostel.name;
+                hostelSelect.appendChild(option);
+            });
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            hostelSelect.innerHTML = '<option value="" disabled selected>Unable to load hostels</option>';
+        });
+}
+
 function addComplaint() {
     let rollNumber = sessionStorage.getItem("roll");
     if (!rollNumber) {
@@ -115,22 +142,27 @@ function addComplaint() {
     let desc = document.getElementById("desc").value;
     let category = document.getElementById("category").value;
     let hostelId = parseInt(document.getElementById("hostel").value);
+    let photo = document.getElementById("photo").files[0];
 
     if (!title || !desc || !category || isNaN(hostelId)) {
         alert("Please fill in all fields and select a hostel.");
         return;
     }
 
+    let formData = new FormData();
+    formData.append("roll", rollNumber);
+    formData.append("title", title);
+    formData.append("description", desc);
+    formData.append("category", category);
+    formData.append("hostel_id", hostelId);
+
+    if (photo) {
+        formData.append("photo", photo);
+    }
+
     fetch("{% url 'register_complaint' %}", {
         method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            roll: rollNumber,
-            title: title,
-            description: desc,
-            category: category,
-            hostel_id: hostelId
-        })
+        body: formData
     })
     .then((response) => {
         if (!response.ok) throw new Error("Server Error");
@@ -146,9 +178,11 @@ function addComplaint() {
     })
     .catch((error) => {
         console.error("Error:", error);
-        alert("An error occurred. Make sure your category exactly matches the database!");
+        alert("An error occurred while submitting the complaint.");
     });
 }
+
+window.onload = loadHostels;
 </script>
 </body>
 </html>

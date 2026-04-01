@@ -123,6 +123,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 #this is pasted in settings.py to allow cross origin requests from frontend to backend 14-02 due to
 #error of [14/Feb/2026 18:25:09] "POST /login/ HTTP/1.1" 200 17 Forbidden (Origin checking failed - http://127.0.0.1:5500 does not match any trusted origins.): /register_complaint/ [14/Feb/2026 18:25:18] "POST /register_complaint/ HTTP/1.1" 403 2554
 #while i click the submit button in register commpliant

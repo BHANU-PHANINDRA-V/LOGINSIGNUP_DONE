@@ -157,9 +157,15 @@ function loginUser() {
             if (data.success) {
                 sessionStorage.setItem("emp_id", username);
                 sessionStorage.setItem("role", "staff");
-                window.location = "{% url 'staff_page' %}";
+                if (data.first_login) {
+                    sessionStorage.setItem("first_login_required", "true");
+                    window.location = "{% url 'change_password_page' %}";
+                } else {
+                    sessionStorage.removeItem("first_login_required");
+                    window.location = "{% url 'staff_page' %}";
+                }
             } else {
-                alert("Invalid Staff Credentials");
+                alert(data.error || "Invalid Staff Credentials");
             }
         })
         .catch((err) => {
