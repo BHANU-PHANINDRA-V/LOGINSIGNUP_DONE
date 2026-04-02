@@ -1,0 +1,79 @@
+erDiagram
+    HOSTEL {
+        INT hostel_id PK
+        VARCHAR name
+    }
+
+    STUDENT {
+        VARCHAR roll PK
+        VARCHAR name
+        VARCHAR mail
+        VARCHAR pswd
+        VARCHAR mobile
+        INT hostel_id FK
+    }
+
+    CATEGORY {
+        INT cat_id PK
+        VARCHAR cat_name
+    }
+
+    DESIGNATION {
+        INT desig_id PK
+        VARCHAR desig_name
+    }
+
+    STAFF_STATUS {
+        INT staff_status_id PK
+        VARCHAR status_name
+    }
+
+    STATUS {
+        INT status_id PK
+        VARCHAR status_name
+    }
+
+    STAFF {
+        INT emp_id PK
+        VARCHAR name
+        VARCHAR mail
+        VARCHAR mobile
+        VARCHAR pswd
+        BOOLEAN first_login
+        INT desig_id FK
+        INT hostel_id FK
+        INT staff_status_id FK
+    }
+
+    COMPLAINT {
+        INT complaint_id PK
+        TEXT title
+        TEXT description
+        VARCHAR attachment
+        TIMESTAMPTZ created_date
+        TIMESTAMPTZ solved_date
+        NUMERIC cost
+        INT status_id FK
+        INT cat_id FK
+        VARCHAR student_id FK
+        INT hostel_id FK
+        INT solved_by_id FK
+    }
+
+    TECHNICAL_WORKER {
+        INT worker_id PK
+        VARCHAR name
+        VARCHAR mobile
+        INT cat_id FK
+    }
+
+    HOSTEL ||--o{ STUDENT : has
+    HOSTEL ||--o{ STAFF : assigns
+    HOSTEL ||--o{ COMPLAINT : receives
+    CATEGORY ||--o{ COMPLAINT : classifies
+    CATEGORY ||--o{ TECHNICAL_WORKER : specializes
+    DESIGNATION ||--o{ STAFF : labels
+    STAFF_STATUS ||--o{ STAFF : tracks
+    STATUS ||--o{ COMPLAINT : tracks
+    STUDENT ||--o{ COMPLAINT : submits
+    STAFF ||--o{ COMPLAINT : resolves
