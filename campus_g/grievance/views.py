@@ -12,6 +12,13 @@ from .models import (
 )
 
 
+def format_local_datetime(value, fmt="%B %d, %Y - %I:%M %p"):
+    if not value:
+        return None
+
+    return timezone.localtime(value).strftime(fmt)
+
+
 def serialize_cost(value):
     if value is None:
         return None
@@ -234,7 +241,7 @@ def student_complaints(request, roll, status):
             "status": c.status_id.status_name,
             "category_name": c.cat_id.cat_name,
             "cost": serialize_cost(c.cost),
-            "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A",
+            "created_date": format_local_datetime(c.created_date, "%B %d, %Y") or "N/A",
         } for c in complaints]
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -257,7 +264,7 @@ def staff_complaints(request, emp_id):
             "status": c.status_id.status_name,
             "category_name": c.cat_id.cat_name,
             "cost": serialize_cost(c.cost),
-            "created_date": c.created_date.strftime("%B %d, %Y") if c.created_date else "N/A",
+            "created_date": format_local_datetime(c.created_date, "%B %d, %Y") or "N/A",
         } for c in complaints]
         return JsonResponse(data, safe=False)
     except Exception as e:
@@ -284,8 +291,8 @@ def complaint_details(request, cid):
             "status": c.status_id.status_name,
             "category": c.cat_id.cat_name,
             "cost": serialize_cost(c.cost),
-            "created_date": c.created_date.strftime("%B %d, %Y - %I:%M %p") if c.created_date else "N/A",
-            "solved_date": c.solved_date.strftime("%B %d, %Y - %I:%M %p") if c.solved_date else None,
+            "created_date": format_local_datetime(c.created_date) or "N/A",
+            "solved_date": format_local_datetime(c.solved_date),
             "solved_by_emp_id": c.solved_by.emp_id if c.solved_by else None,
             "solved_by_name": c.solved_by.name if c.solved_by else None,
             "student_name": c.student_id.name,
@@ -379,8 +386,9 @@ def chief_warden_monthly_stats(request, emp_id):
         monthly_stats = {}
 
         for complaint in complaints:
-            month_key = complaint.created_date.strftime("%Y-%m")
-            month_label = complaint.created_date.strftime("%B %Y")
+            local_created_date = timezone.localtime(complaint.created_date)
+            month_key = local_created_date.strftime("%Y-%m")
+            month_label = local_created_date.strftime("%B %Y")
 
             if month_key not in monthly_stats:
                 monthly_stats[month_key] = {
