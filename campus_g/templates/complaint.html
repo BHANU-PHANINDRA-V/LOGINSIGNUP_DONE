@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v5">
 </head>
 <body>
+<nav class="site-nav">
+    <div class="site-nav-brand">Campus Grievance</div>
+    <div class="site-nav-links">
+        <a class="site-nav-link" href="{% url 'index' %}">Home</a>
+        <a class="site-nav-link" href="{% url 'login_page' %}">Login</a>
+        <a class="site-nav-link" href="{% url 'signin_page' %}">Register</a>
+        <a class="site-nav-link active" href="{% url 'complaint_page' %}">Complaint</a>
+    </div>
+</nav>
 <main class="page-shell">
     <section class="auth-layout">
         <aside class="surface-panel auth-aside">

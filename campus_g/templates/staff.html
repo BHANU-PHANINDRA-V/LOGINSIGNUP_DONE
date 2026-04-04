@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v5" />
 </head>
 <body>
+<nav class="site-nav">
+    <div class="site-nav-brand">Campus Grievance</div>
+    <div class="site-nav-links">
+        <a class="site-nav-link" href="{% url 'index' %}">Home</a>
+        <a class="site-nav-link" href="{% url 'login_page' %}">Login</a>
+        <a class="site-nav-link" href="{% url 'signin_page' %}">Register</a>
+        <a class="site-nav-link active" href="{% url 'staff_page' %}">Staff</a>
+    </div>
+</nav>
 <main class="page-shell">
     <section class="container wide">
         <div class="topbar-actions">
@@ -25,7 +34,7 @@
             </div>
         </div>
 
-        <div id="profilePanel" class="profile-panel" hidden>
+        <div id="profilePanel" class="profile-panel" hidden style="display: none;">
             <div class="results-head">
                 <div>
                     <p class="results-title">Staff Profile</p>
@@ -769,8 +778,15 @@ function toggleProfilePanel() {
     const passwordPanel = document.getElementById("staffPasswordPanel");
     const passwordFields = document.querySelectorAll("#staffPasswordPanel .field");
     const closeButton = document.getElementById("staffProfileClose");
+    const isHidden = panel.hidden;
+
+    if (!isHidden) {
+        closeProfilePanel();
+        return;
+    }
 
     panel.hidden = false;
+    panel.style.display = "flex";
     closeButton.style.display = "inline-flex";
     passwordPanel.hidden = true;
     passwordFields.forEach((field) => {
@@ -781,7 +797,9 @@ function toggleProfilePanel() {
 }
 
 function closeProfilePanel() {
-    document.getElementById("profilePanel").hidden = true;
+    const panel = document.getElementById("profilePanel");
+    panel.hidden = true;
+    panel.style.display = "none";
     document.getElementById("staffPasswordPanel").hidden = true;
     document.getElementById("staffProfileClose").style.display = "none";
     document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {
@@ -820,6 +838,7 @@ function logoutUser() {
 }
 
 document.getElementById("profilePanel").hidden = true;
+document.getElementById("profilePanel").style.display = "none";
 document.getElementById("staffPasswordPanel").hidden = true;
 document.getElementById("staffProfileClose").style.display = "none";
 document.querySelectorAll("#staffPasswordPanel .field").forEach((field) => {

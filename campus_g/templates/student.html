@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="{% static 'index.css' %}?v=campus_suite_v5">
 </head>
 <body>
+<nav class="site-nav">
+    <div class="site-nav-brand">Campus Grievance</div>
+    <div class="site-nav-links">
+        <a class="site-nav-link" href="{% url 'index' %}">Home</a>
+        <a class="site-nav-link" href="{% url 'login_page' %}">Login</a>
+        <a class="site-nav-link" href="{% url 'signin_page' %}">Register</a>
+        <a class="site-nav-link active" href="{% url 'student_page' %}">Student</a>
+    </div>
+</nav>
 <main class="page-shell">
     <section class="container wide">
         <div class="topbar-actions">
@@ -25,7 +34,7 @@
             </div>
         </div>
 
-        <div id="profilePanel" class="profile-panel" hidden>
+        <div id="profilePanel" class="profile-panel" hidden style="display: none;">
             <div class="results-head">
                 <div>
                     <p class="results-title">Student Profile</p>
@@ -374,8 +383,15 @@ function toggleProfilePanel() {
     const passwordPanel = document.getElementById("studentPasswordPanel");
     const passwordFields = document.querySelectorAll("#studentPasswordPanel .field");
     const closeButton = document.getElementById("studentProfileClose");
+    const isHidden = panel.hidden;
+
+    if (!isHidden) {
+        closeProfilePanel();
+        return;
+    }
 
     panel.hidden = false;
+    panel.style.display = "flex";
     closeButton.style.display = "inline-flex";
     passwordPanel.hidden = true;
     passwordFields.forEach((field) => {
@@ -386,7 +402,9 @@ function toggleProfilePanel() {
 }
 
 function closeProfilePanel() {
-    document.getElementById("profilePanel").hidden = true;
+    const panel = document.getElementById("profilePanel");
+    panel.hidden = true;
+    panel.style.display = "none";
     document.getElementById("studentPasswordPanel").hidden = true;
     document.getElementById("studentProfileClose").style.display = "none";
     document.querySelectorAll("#studentPasswordPanel .field").forEach((field) => {
@@ -424,6 +442,7 @@ function logoutUser() {
 }
 
 document.getElementById("profilePanel").hidden = true;
+document.getElementById("profilePanel").style.display = "none";
 document.getElementById("studentPasswordPanel").hidden = true;
 document.getElementById("studentProfileClose").style.display = "none";
 document.querySelectorAll("#studentPasswordPanel .field").forEach((field) => {
